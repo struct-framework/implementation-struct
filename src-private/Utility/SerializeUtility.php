@@ -2,19 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Struct\Serializing\Private\Utility;
+namespace Struct\Struct\Private\Utility;
 
 use Exception\Unexpected\UnexpectedException;
-use Struct\Contracts\DataType\DataTypeInterface;
+use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructCollectionInterface;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidStructException;
-use Struct\Serializing\Enum\KeyConvert;
-use Struct\Serializing\Private\Helper\TransformHelper;
+use Struct\Struct\Enum\KeyConvert;
+use Struct\Struct\Private\Helper\TransformHelper;
 
-/**
- * @deprecated
- */
 class SerializeUtility
 {
     /**

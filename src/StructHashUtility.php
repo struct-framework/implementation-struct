@@ -7,7 +7,7 @@ namespace Struct\Struct;
 use BackedEnum;
 use DateTime;
 use Exception\Unexpected\UnexpectedException;
-use Struct\Contracts\DataType\DataTypeInterface;
+use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructCollectionInterface;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidStructException;

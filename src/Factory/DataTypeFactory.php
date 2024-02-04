@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Factory;
 
-use Struct\Contracts\DataType\DataTypeInterface;
+use Struct\Contracts\DataTypeInterface;
 
 class DataTypeFactory
 {

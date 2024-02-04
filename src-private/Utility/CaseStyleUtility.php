@@ -2,13 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Struct\Serializing\Private\Utility;
+namespace Struct\Struct\Private\Utility;
 
-use Struct\Serializing\Enum\KeyConvert;
+use Struct\Struct\Enum\KeyConvert;
 
-/**
- * @deprecated
- */
 class CaseStyleUtility
 {
     public static function lowerCamelToSnake(string $string): string

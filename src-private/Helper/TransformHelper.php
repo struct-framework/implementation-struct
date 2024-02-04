@@ -2,13 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Struct\Serializing\Private\Helper;
+namespace Struct\Struct\Private\Helper;
 
-use Struct\Serializing\Exception\TransformException;
+use Struct\Exception\TransformException;
 
-/**
- * @deprecated
- */
 class TransformHelper
 {
     public static function formatDateTime(\DateTimeInterface $dateTime): string

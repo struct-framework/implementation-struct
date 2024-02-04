@@ -2,11 +2,8 @@
 
 declare(strict_types=1);
 
-namespace Struct\Serializing\Enum;
+namespace Struct\Struct\Enum;
 
-/**
- * @deprecated
- */
 enum KeyConvert
 {
     case snakeCase;

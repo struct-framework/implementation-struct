@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Struct\Struct\Struct;
+namespace Struct\Struct\Private\Struct;
 
 class PropertyReflection
 {

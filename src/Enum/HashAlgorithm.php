@@ -9,5 +9,5 @@ enum HashAlgorithm: string
     case MD5 = 'md5';
     case SHA1 = 'sha1';
     case SHA2 = 'sha256';
-    case SHA3= 'sha3-512';
+    case SHA3 = 'sha3-512';
 }

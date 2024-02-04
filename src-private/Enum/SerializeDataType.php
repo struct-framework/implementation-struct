@@ -2,11 +2,8 @@
 
 declare(strict_types=1);
 
-namespace Struct\Serializing\Private\Enum;
+namespace Struct\Struct\Private\Enum;
 
-/**
- * @deprecated
- */
 enum SerializeDataType: string
 {
     case NullType = 'null';

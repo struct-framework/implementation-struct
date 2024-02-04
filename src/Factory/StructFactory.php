@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Factory;
 
-use Struct\Contracts\DataType\DataTypeInterface;
+use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructCollectionInterface;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidStructException;
 use Struct\Struct\Private\Placeholder\Undefined;
-use Struct\Struct\Struct\StructureProperty;
-use Struct\Struct\Utility\StructurePropertyUtility;
+use Struct\Struct\Private\Struct\StructureProperty;
+use Struct\Struct\StructurePropertyUtility;
 
 class StructFactory
 {

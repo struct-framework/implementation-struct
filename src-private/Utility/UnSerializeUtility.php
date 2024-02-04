@@ -2,24 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Struct\Serializing\Private\Utility;
+namespace Struct\Struct\Private\Utility;
 
 use Exception\Unexpected\UnexpectedException;
-use Struct\Contracts\DataType\DataTypeInterface;
+use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructCollectionInterface;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidValueException;
-use Struct\Serializing\Enum\KeyConvert;
-use Struct\Serializing\Exception\TransformException;
-use Struct\Serializing\Private\Enum\SerializeDataType;
-use Struct\Serializing\Private\Helper\TransformHelper;
+use Struct\Exception\TransformException;
+use Struct\Struct\Enum\KeyConvert;
 use Struct\Struct\Factory\DataTypeFactory;
+use Struct\Struct\Private\Enum\SerializeDataType;
 use Struct\Struct\Private\Helper\PropertyReflectionHelper;
+use Struct\Struct\Private\Helper\TransformHelper;
 use Struct\Struct\Private\Struct\PropertyReflection;
 
-/**
- * @deprecated
- */
 class UnSerializeUtility
 {
     /**
@@ -39,7 +36,7 @@ class UnSerializeUtility
             $structure = $this->_unSerializeStructCollection($data, $propertyReflection, $keyConvert);
         }
         if ($structure === null) {
-            throw new \LogicException('The type: <' . $type . '> must be an StructInterface or StructCollectionInterface', 1698960691);
+            throw new InvalidValueException('The type: <' . $type . '> must be an StructInterface or StructCollectionInterface', 1698960691);
         }
         return $structure; // @phpstan-ignore-line
     }

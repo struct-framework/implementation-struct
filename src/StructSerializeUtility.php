@@ -7,11 +7,11 @@ namespace Struct\Struct;
 use Exception\Unexpected\UnexpectedException;
 use Struct\Contracts\StructCollectionInterface;
 use Struct\Contracts\StructInterface;
-use Struct\Serializing\Enum\KeyConvert;
-use Struct\Serializing\Private\Utility\SerializeUtility;
-use Struct\Serializing\Private\Utility\UnSerializeUtility;
+use Struct\Struct\Enum\KeyConvert;
+use Struct\Struct\Private\Utility\SerializeUtility;
+use Struct\Struct\Private\Utility\UnSerializeUtility;
 
-class StructSerializUtility
+class StructSerializeUtility
 {
     /**
      * @return mixed[]
