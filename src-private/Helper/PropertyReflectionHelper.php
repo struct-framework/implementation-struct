@@ -11,7 +11,7 @@ use Struct\Attribute\StructType;
 use Struct\Contracts\StructCollectionInterface;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidValueException;
-use Struct\Struct\Struct\PropertyReflection;
+use Struct\Struct\Private\Struct\PropertyReflection;
 
 class PropertyReflectionHelper
 {
