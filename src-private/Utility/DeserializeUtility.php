@@ -17,41 +17,56 @@ use Struct\Struct\Private\Helper\PropertyReflectionHelper;
 use Struct\Struct\Private\Helper\TransformHelper;
 use Struct\Struct\Private\Struct\PropertyReflection;
 
-class UnSerializeUtility
+class DeserializeUtility
 {
     /**
-     * @template T of StructInterface|StructCollectionInterface
+     * @template T of StructInterface
      * @param array<mixed>|Object $data
      * @param class-string<T> $type
      * @return T
      */
-    public function unSerialize(array|Object $data, string $type, ?KeyConvert $keyConvert): StructInterface|StructCollectionInterface
+    public function deserialize(array|Object $data, string $type, ?KeyConvert $keyConvert): StructInterface
     {
-        $structure = null;
-        if (\is_a($type, StructInterface::class, true) === true) {
-            $structure = $this->_unSerializeStructure($data, $type, $keyConvert);
+        $structure = $this->_deserializeStructure($data, $type, $keyConvert);
+        return $structure;
+    }
+
+    /**
+     * @template T of StructCollectionInterface
+     * @param object|array<mixed> $data
+     * @param class-string<StructInterface> $itemType
+     * @param KeyConvert|null $keyConvert
+     * @param class-string<T> $collectionType
+     * @return T
+     */
+    public function _deserializeCollection(object|array $data, string $itemType, ?KeyConvert $keyConvert, string $collectionType): StructCollectionInterface
+    {
+        if (is_a($itemType, StructInterface::class, true) === false) {
+            throw new InvalidValueException('The type: <' . $itemType . '> must be an StructInterface', 1707054100);
         }
-        if (\is_a($type, StructCollectionInterface::class, true) === true) {
-            $propertyReflection = PropertyReflectionHelper::readPropertyOfStructCollection($type);
-            $structure = $this->_unSerializeStructCollection($data, $propertyReflection, $keyConvert);
+        if (is_a($collectionType, StructCollectionInterface::class, true) === false) {
+            throw new InvalidValueException('The type: <' . $collectionType . '> must be an StructCollectionInterface', 1707054096);
         }
-        if ($structure === null) {
-            throw new InvalidValueException('The type: <' . $type . '> must be an StructInterface or StructCollectionInterface', 1698960691);
-        }
-        return $structure; // @phpstan-ignore-line
+
+        $propertyReflection = new PropertyReflection();
+        $propertyReflection->type = $collectionType;
+        $propertyReflection->structTypeOfArrayOrCollection = $itemType;
+
+        $structCollection = $this->_deserializeStructCollection($data, $propertyReflection, $keyConvert);
+        return $structCollection; // @phpstan-ignore-line
     }
 
     protected function _unSerialize(mixed $data, string $type, PropertyReflection $propertyReflection, ?KeyConvert $keyConvert): mixed
     {
         $dataType = $this->_findDataType($data, $type);
         $result = match ($dataType) {
-            SerializeDataType::StructureType  => $this->_unSerializeStructure($data, $type, $keyConvert), // @phpstan-ignore-line
+            SerializeDataType::StructureType  => $this->_deserializeStructure($data, $type, $keyConvert), // @phpstan-ignore-line
             SerializeDataType::NullType => $this->parseNull($propertyReflection),
-            SerializeDataType::EnumType => $this->_unSerializeEnum($data, $type),
-            SerializeDataType::StructCollection => $this->_unSerializeStructCollection($data, $propertyReflection, $keyConvert),
-            SerializeDataType::ArrayType => $this->_unSerializeArray($data, $propertyReflection, $keyConvert),
-            SerializeDataType::DataType => $this->_unSerializeDataType($data, $propertyReflection), // @phpstan-ignore-line
-            SerializeDataType::BuildInType => $this->_unSerializeBuildIn($data, $type, $propertyReflection),
+            SerializeDataType::EnumType => $this->_deserializeEnum($data, $type),
+            SerializeDataType::StructCollection => $this->_deserializeStructCollection($data, $propertyReflection, $keyConvert),
+            SerializeDataType::ArrayType => $this->_deserializeArray($data, $propertyReflection, $keyConvert),
+            SerializeDataType::DataType => $this->_deserializeDataType($data, $propertyReflection), // @phpstan-ignore-line
+            SerializeDataType::BuildInType => $this->_deserializeBuildIn($data, $type, $propertyReflection),
         };
         return $result;
     }
@@ -61,7 +76,7 @@ class UnSerializeUtility
      * @param class-string<T> $type
      * @return T
      */
-    protected function _unSerializeStructure(mixed $data, string $type, ?KeyConvert $keyConvert): StructInterface
+    protected function _deserializeStructure(mixed $data, string $type, ?KeyConvert $keyConvert): StructInterface
     {
         $dataArray = $this->_transformObjectToArray($data);
         if (is_a($type, StructInterface::class, true) === false) {
@@ -106,7 +121,7 @@ class UnSerializeUtility
         return SerializeDataType::BuildInType;
     }
 
-    protected function _unSerializeEnum(mixed $data, string $type): \UnitEnum
+    protected function _deserializeEnum(mixed $data, string $type): \UnitEnum
     {
         if (is_string($data) === false && is_int($data) === false) {
             throw new \LogicException('The value for <' . $data . '> must be string or int', 1652900283);
@@ -159,7 +174,7 @@ class UnSerializeUtility
         throw new UnexpectedException(1676979096);
     }
 
-    protected function _unSerializeDataType(string|\Stringable $serializedData, PropertyReflection $propertyReflection): DataTypeInterface
+    protected function _deserializeDataType(string|\Stringable $serializedData, PropertyReflection $propertyReflection): DataTypeInterface
     {
         $serializedData = (string) $serializedData;
         /** @var class-string<DataTypeInterface> $type */
@@ -168,7 +183,7 @@ class UnSerializeUtility
         return $dataType;
     }
 
-    protected function _unSerializeStructCollection(mixed $dataArray, PropertyReflection $propertyReflection, ?KeyConvert $keyConvert): StructCollectionInterface
+    protected function _deserializeStructCollection(mixed $dataArray, PropertyReflection $propertyReflection, ?KeyConvert $keyConvert): StructCollectionInterface
     {
         if (
             \is_array($dataArray) === false &&
@@ -197,7 +212,7 @@ class UnSerializeUtility
     /**
      * @return array<mixed>
      */
-    protected function _unSerializeArray(mixed $dataArray, PropertyReflection $propertyReflection, ?KeyConvert $keyConvert): array
+    protected function _deserializeArray(mixed $dataArray, PropertyReflection $propertyReflection, ?KeyConvert $keyConvert): array
     {
         if (\is_array($dataArray) === false) {
             throw new UnexpectedException(1675967242);
@@ -230,7 +245,7 @@ class UnSerializeUtility
         return $parsedOutput;
     }
 
-    protected function _unSerializeBuildIn(mixed $value, string $type, PropertyReflection $propertyReflection): mixed
+    protected function _deserializeBuildIn(mixed $value, string $type, PropertyReflection $propertyReflection): mixed
     {
         try {
             return TransformHelper::transformBuildIn($value, $type);
