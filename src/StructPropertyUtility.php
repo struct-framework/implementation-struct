@@ -13,7 +13,7 @@ use Struct\Exception\InvalidValueException;
 use Struct\Struct\Factory\DataTypeFactory;
 use Struct\Struct\Private\Struct\StructureProperty;
 
-class StructurePropertyUtility
+class StructPropertyUtility
 {
     /**
      * @param class-string<StructInterface>|StructInterface $structure

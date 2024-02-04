@@ -10,7 +10,7 @@ use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidStructException;
 use Struct\Struct\Private\Placeholder\Undefined;
 use Struct\Struct\Private\Struct\StructureProperty;
-use Struct\Struct\StructurePropertyUtility;
+use Struct\Struct\StructPropertyUtility;
 
 class StructFactory
 {
@@ -25,7 +25,7 @@ class StructFactory
             throw new InvalidStructException('The structureType <' . $structType . '> must implement the interface <' . StructInterface::class . '>', 1675967937);
         }
         $structure = new $structType();
-        $properties = StructurePropertyUtility::readProperties($structure);
+        $properties = StructPropertyUtility::readProperties($structure);
         foreach ($properties as $property) {
             $name = $property->name;
             $value = self::buildValue($property);
