@@ -226,7 +226,7 @@ class DeserializeUtility
             throw new UnexpectedException(1675967242);
         }
         // Return mixed arrays as is.
-        if ($propertyReflection->isArrayMixed === true) {
+        if ($propertyReflection->type === 'mixed') {
             return $dataArray;
         }
         /** @var string $type */
