@@ -225,6 +225,10 @@ class DeserializeUtility
         if (is_array($dataArray) === false) {
             throw new UnexpectedException(1675967242);
         }
+        // Return mixed arrays as is.
+        if ($propertyReflection->isArrayMixed === true) {
+            return $dataArray;
+        }
         /** @var string $type */
         $type = $propertyReflection->structTypeOfArrayOrCollection;
         $isArrayKeyList = $propertyReflection->isArrayKeyList;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Struct\Struct\Private\Helper;
 
 use Exception\Unexpected\UnexpectedException;
+use Struct\Attribute\ArrayMixed;
 use function is_a;
 use ReflectionClass;
 use ReflectionException;
@@ -146,6 +147,11 @@ class PropertyReflectionHelper
         }
         $arrayListAttributes = $reflectionProperty->getAttributes(ArrayList::class);
         $arrayKeyListAttributes = $reflectionProperty->getAttributes(ArrayKeyList::class);
+        $arrayMixedAttributes = $reflectionProperty->getAttributes(ArrayMixed::class);
+        if (count($arrayMixedAttributes) > 0) {
+            $propertyReflection->isArrayMixed = true;
+            return;
+        }
         if (count($arrayListAttributes) === 0 && count($arrayKeyListAttributes) === 0) {
             return;
         }
