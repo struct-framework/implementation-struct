@@ -4,13 +4,22 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Private\Utility;
 
+use function array_is_list;
+use DateTimeInterface;
 use Exception\Unexpected\UnexpectedException;
+use function gettype;
+use function is_a;
+use function is_array;
+use function is_object;
+use ReflectionClass;
+use ReflectionException;
 use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructCollectionInterface;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidStructException;
 use Struct\Struct\Enum\KeyConvert;
 use Struct\Struct\Private\Helper\TransformHelper;
+use UnitEnum;
 
 class SerializeUtility
 {
@@ -57,9 +66,9 @@ class SerializeUtility
     {
         $propertyNames = [];
         try {
-            $reflection = new \ReflectionClass($structure);
+            $reflection = new ReflectionClass($structure);
             // @phpstan-ignore-next-line
-        } catch (\ReflectionException $exception) {
+        } catch (ReflectionException $exception) {
             throw new UnexpectedException(651559371, $exception);
         }
         $reflectionProperties = $reflection->getProperties();
@@ -75,7 +84,7 @@ class SerializeUtility
 
     protected function formatValue(mixed $value, ?KeyConvert $keyConvert): mixed
     {
-        $type = \gettype($value);
+        $type = gettype($value);
         if ($value === null) {
             return null;
         }
@@ -94,17 +103,17 @@ class SerializeUtility
 
     protected function formatComplexValue(mixed $value, ?KeyConvert $keyConvert): mixed
     {
-        if (\is_array($value)) {
+        if (is_array($value)) {
             return $this->formatArrayValue($value, $keyConvert);
         }
         if ($value instanceof StructCollectionInterface) {
             return $this->formatArrayValue($value->getValues(), $keyConvert);
         }
-        if ($value instanceof \UnitEnum) {
+        if ($value instanceof UnitEnum) {
             return TransformHelper::formatEnum($value);
         }
 
-        if (\is_object($value)) {
+        if (is_object($value)) {
             return $this->formatObjectValue($value, $keyConvert);
         }
 
@@ -117,7 +126,7 @@ class SerializeUtility
      */
     protected function formatArrayValue(array $value, ?KeyConvert $keyConvert): array
     {
-        $isList = \array_is_list($value);
+        $isList = array_is_list($value);
         $values = [];
         foreach ($value as $key => $item) {
             if ($isList) {
@@ -135,13 +144,13 @@ class SerializeUtility
      */
     protected function formatObjectValue(object $value, ?KeyConvert $keyConvert): array|string
     {
-        if (\is_a($value, \DateTimeInterface::class)) {
+        if (is_a($value, DateTimeInterface::class)) {
             return TransformHelper::formatDateTime($value);
         }
-        if (\is_a($value, StructInterface::class)) {
+        if (is_a($value, StructInterface::class)) {
             return $this->_serialize($value, $keyConvert);
         }
-        if (\is_a($value, DataTypeInterface::class)) {
+        if (is_a($value, DataTypeInterface::class)) {
             return $value->serializeToString();
         }
         throw new InvalidStructException('The type of value is not supported', 1651521990);

@@ -5,6 +5,13 @@ declare(strict_types=1);
 namespace Struct\Struct\Private\Helper;
 
 use Exception\Unexpected\UnexpectedException;
+use function is_a;
+use ReflectionClass;
+use ReflectionException;
+use ReflectionIntersectionType;
+use ReflectionNamedType;
+use ReflectionProperty;
+use ReflectionUnionType;
 use Struct\Attribute\ArrayKeyList;
 use Struct\Attribute\ArrayList;
 use Struct\Attribute\StructType;
@@ -12,6 +19,7 @@ use Struct\Contracts\StructCollectionInterface;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidValueException;
 use Struct\Struct\Private\Struct\PropertyReflection;
+use Throwable;
 
 class PropertyReflectionHelper
 {
@@ -22,9 +30,9 @@ class PropertyReflectionHelper
     {
         $properties = [];
         try {
-            $reflection = new \ReflectionClass($structure);
+            $reflection = new ReflectionClass($structure);
             // @phpstan-ignore-next-line
-        } catch (\ReflectionException $exception) {
+        } catch (ReflectionException $exception) {
             throw new UnexpectedException(1652124640, $exception);
         }
         $reflectionProperties = $reflection->getProperties();
@@ -59,7 +67,7 @@ class PropertyReflectionHelper
         return $propertyReflection;
     }
 
-    protected static function buildPropertyReflection(\ReflectionProperty $reflectionProperty): PropertyReflection
+    protected static function buildPropertyReflection(ReflectionProperty $reflectionProperty): PropertyReflection
     {
         $propertyReflection = new PropertyReflection();
         $propertyReflection->name = $reflectionProperty->getName();
@@ -67,13 +75,13 @@ class PropertyReflectionHelper
         if ($type === null) {
             throw new InvalidValueException('The property <' . $propertyReflection->name . '> must have an type declaration', 1652179807);
         }
-        if (is_a($type, \ReflectionIntersectionType::class) === true) {
+        if (is_a($type, ReflectionIntersectionType::class) === true) {
             throw new InvalidValueException('Intersection type is not supported at property <' . $propertyReflection->name . '>', 1652179804);
         }
-        if (is_a($type, \ReflectionUnionType::class) === true) {
+        if (is_a($type, ReflectionUnionType::class) === true) {
             throw new InvalidValueException('Union type is not supported at property <' . $propertyReflection->name . '>', 1652179804);
         }
-        if (is_a($type, \ReflectionNamedType::class) === false) {
+        if (is_a($type, ReflectionNamedType::class) === false) {
             throw new UnexpectedException(1652187714);
         }
 
@@ -89,9 +97,9 @@ class PropertyReflectionHelper
         return $propertyReflection;
     }
 
-    protected static function readStructCollectionAttributes(\ReflectionProperty $reflectionProperty, PropertyReflection $propertyReflection): void
+    protected static function readStructCollectionAttributes(ReflectionProperty $reflectionProperty, PropertyReflection $propertyReflection): void
     {
-        if (\is_a($propertyReflection->type, StructCollectionInterface::class, true) === false) {
+        if (is_a($propertyReflection->type, StructCollectionInterface::class, true) === false) {
             return;
         }
         $structTypes = $reflectionProperty->getAttributes(StructType::class);
@@ -117,21 +125,21 @@ class PropertyReflectionHelper
      */
     protected static function readTypeByCurrent(string $structCollectionType): string
     {
-        $reflection = new \ReflectionClass($structCollectionType);
+        $reflection = new ReflectionClass($structCollectionType);
         try {
             $methodCurrent = $reflection->getMethod('current');
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             throw new UnexpectedException(1698953504, $exception);
         }
         $returnType = $methodCurrent->getReturnType();
-        if ($returnType instanceof \ReflectionNamedType === false) {
+        if ($returnType instanceof ReflectionNamedType === false) {
             throw new UnexpectedException(1698953565);
         }
         $structType = $returnType->getName();
         return $structType;
     }
 
-    protected static function readArrayAttributes(\ReflectionProperty $reflectionProperty, PropertyReflection $propertyReflection): void
+    protected static function readArrayAttributes(ReflectionProperty $reflectionProperty, PropertyReflection $propertyReflection): void
     {
         if ($propertyReflection->type !== 'array') {
             return;

@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace Struct\Struct;
 
+use function array_is_list;
 use BackedEnum;
 use DateTime;
 use Exception\Unexpected\UnexpectedException;
+use function gettype;
+use ReflectionClass;
+use ReflectionException;
 use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructCollectionInterface;
 use Struct\Contracts\StructInterface;
@@ -109,7 +113,7 @@ class StructHashUtility
     protected static function buildHashFromArray(array $values, HashAlgorithm $algorithm): string
     {
         $data = '';
-        $list = \array_is_list($values);
+        $list = array_is_list($values);
 
         foreach ($values as $key => $value) {
             $valueHash = self::buildHashFromValue($value, $algorithm);
@@ -130,9 +134,9 @@ class StructHashUtility
     {
         $propertyNames = [];
         try {
-            $reflection = new \ReflectionClass($struct);
+            $reflection = new ReflectionClass($struct);
             // @phpstan-ignore-next-line
-        } catch (\ReflectionException $exception) {
+        } catch (ReflectionException $exception) {
             throw new UnexpectedException(1651559371, $exception);
         }
         $reflectionProperties = $reflection->getProperties();
@@ -148,7 +152,7 @@ class StructHashUtility
 
     protected static function findDataType(mixed $value): DataType
     {
-        $type = \gettype($value);
+        $type = gettype($value);
         if ($value === null) {
             return DataType::NULL;
         }

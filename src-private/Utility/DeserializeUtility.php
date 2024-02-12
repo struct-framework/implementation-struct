@@ -4,7 +4,14 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Private\Utility;
 
+use function array_key_exists;
+use BackedEnum;
+use DateTimeInterface;
 use Exception\Unexpected\UnexpectedException;
+use function is_array;
+use function is_object;
+use LogicException;
+use Stringable;
 use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructCollectionInterface;
 use Struct\Contracts\StructInterface;
@@ -16,6 +23,7 @@ use Struct\Struct\Private\Enum\SerializeDataType;
 use Struct\Struct\Private\Helper\PropertyReflectionHelper;
 use Struct\Struct\Private\Helper\TransformHelper;
 use Struct\Struct\Private\Struct\PropertyReflection;
+use UnitEnum;
 
 class DeserializeUtility
 {
@@ -89,7 +97,7 @@ class DeserializeUtility
             $propertyName = $propertyReflection->name;
             $value = null;
             $arrayKey = CaseStyleUtility::buildArrayKeyFromPropertyName($propertyName, $keyConvert);
-            if (\array_key_exists($arrayKey, $dataArray) === true) {
+            if (array_key_exists($arrayKey, $dataArray) === true) {
                 $value = $dataArray[$arrayKey];
             }
             $structure->$propertyName = $this->_unSerialize($value, $propertyReflection->type, $propertyReflection, $keyConvert);  // @phpstan-ignore-line
@@ -103,7 +111,7 @@ class DeserializeUtility
         if ($data === null) {
             return SerializeDataType::NullType;
         }
-        if (is_a($type, \UnitEnum::class, true) === true) {
+        if (is_a($type, UnitEnum::class, true) === true) {
             return SerializeDataType::EnumType;
         }
         if (is_a($type, DataTypeInterface::class, true) === true) {
@@ -121,27 +129,27 @@ class DeserializeUtility
         return SerializeDataType::BuildInType;
     }
 
-    protected function _deserializeEnum(mixed $data, string $type): \UnitEnum
+    protected function _deserializeEnum(mixed $data, string $type): UnitEnum
     {
         if (is_string($data) === false && is_int($data) === false) {
-            throw new \LogicException('The value for <' . $data . '> must be string or int', 1652900283);
+            throw new LogicException('The value for <' . $data . '> must be string or int', 1652900283);
         }
 
-        if (is_a($type, \BackedEnum::class, true) === true) {
+        if (is_a($type, BackedEnum::class, true) === true) {
             $enum = $type::tryFrom($data);
             if ($enum === null) {
-                throw new \LogicException('The value <' . $data . '> is not allowed for Enum <' . $type . '>', 1652900286);
+                throw new LogicException('The value <' . $data . '> is not allowed for Enum <' . $type . '>', 1652900286);
             }
             return $enum;
         }
         $cases = $type::cases();
-        /** @var \UnitEnum $case */
+        /** @var UnitEnum $case */
         foreach ($cases as $case) {
             if ($case->name === $data) {
                 return $case;
             }
         }
-        throw new \LogicException('The value <' . $data . '> is not allowed for Enum <' . $type . '>', 1652899974);
+        throw new LogicException('The value <' . $data . '> is not allowed for Enum <' . $type . '>', 1652899974);
     }
 
     /**
@@ -150,21 +158,21 @@ class DeserializeUtility
      */
     protected function _transformObjectToArray(mixed $data): array
     {
-        if (\is_array($data) === true) {
+        if (is_array($data) === true) {
             return $data;
         }
 
         if (
-            \is_object($data) === true &&
-            is_a($data, \DateTimeInterface::class) === false
+            is_object($data) === true &&
+            is_a($data, DateTimeInterface::class) === false
         ) {
             $dataArray = [];
             $dataArrayTransform = (array) $data;
             foreach ($dataArrayTransform as $key => $value) {
-                if (is_a($value, \DateTimeInterface::class)) {
+                if (is_a($value, DateTimeInterface::class)) {
                     $value = TransformHelper::formatDateTime($value);
                 }
-                if ($value instanceof \UnitEnum) {
+                if ($value instanceof UnitEnum) {
                     $value = TransformHelper::formatEnum($value);
                 }
                 $dataArray[$key] = $value;
@@ -174,7 +182,7 @@ class DeserializeUtility
         throw new UnexpectedException(1676979096);
     }
 
-    protected function _deserializeDataType(string|\Stringable $serializedData, PropertyReflection $propertyReflection): DataTypeInterface
+    protected function _deserializeDataType(string|Stringable $serializedData, PropertyReflection $propertyReflection): DataTypeInterface
     {
         $serializedData = (string) $serializedData;
         /** @var class-string<DataTypeInterface> $type */
@@ -186,7 +194,7 @@ class DeserializeUtility
     protected function _deserializeStructCollection(mixed $dataArray, PropertyReflection $propertyReflection, ?KeyConvert $keyConvert): StructCollectionInterface
     {
         if (
-            \is_array($dataArray) === false &&
+            is_array($dataArray) === false &&
             $dataArray instanceof StructCollectionInterface === false
         ) {
             throw new UnexpectedException(1675967242);
@@ -214,7 +222,7 @@ class DeserializeUtility
      */
     protected function _deserializeArray(mixed $dataArray, PropertyReflection $propertyReflection, ?KeyConvert $keyConvert): array
     {
-        if (\is_array($dataArray) === false) {
+        if (is_array($dataArray) === false) {
             throw new UnexpectedException(1675967242);
         }
         /** @var string $type */
@@ -250,7 +258,7 @@ class DeserializeUtility
         try {
             return TransformHelper::transformBuildIn($value, $type);
         } catch (TransformException $transformException) {
-            throw new \LogicException('Can not transform property <' . $propertyReflection->name . '>', 1652190689, $transformException);
+            throw new LogicException('Can not transform property <' . $propertyReflection->name . '>', 1652190689, $transformException);
         }
     }
 
@@ -262,6 +270,6 @@ class DeserializeUtility
         if ($propertyReflection->isHasDefaultValue === true) {
             return $propertyReflection->defaultValue;
         }
-        throw new \LogicException('No value for <' . $propertyReflection->name . '> found', 1675967217);
+        throw new LogicException('No value for <' . $propertyReflection->name . '> found', 1675967217);
     }
 }

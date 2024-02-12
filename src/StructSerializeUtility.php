@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Struct\Struct;
 
 use Exception\Unexpected\UnexpectedException;
+use function json_decode;
+use function json_encode;
+use JsonException;
+use LogicException;
 use Struct\Contracts\StructCollection;
 use Struct\Contracts\StructCollectionInterface;
 use Struct\Contracts\StructInterface;
@@ -52,7 +56,7 @@ class StructSerializeUtility
     public static function serializeToJson(StructInterface|StructCollectionInterface $structure, ?KeyConvert $keyConvert = null): string
     {
         $dataArray = self::serialize($structure, $keyConvert);
-        $dataJson = \json_encode($dataArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        $dataJson = json_encode($dataArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         if ($dataJson === false) {
             throw new UnexpectedException(1675972511);
         }
@@ -70,9 +74,9 @@ class StructSerializeUtility
     {
         try {
             /** @var mixed[] $dataArray */
-            $dataArray = \json_decode($dataJson, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException $exception) {
-            throw new \LogicException('Can not parse the given JSON string', 1675972764, $exception);
+            $dataArray = json_decode($dataJson, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $exception) {
+            throw new LogicException('Can not parse the given JSON string', 1675972764, $exception);
         }
         return self::deserialize($dataArray, $type, $keyConvert);
     }
@@ -89,9 +93,9 @@ class StructSerializeUtility
     {
         try {
             /** @var mixed[] $dataArray */
-            $dataArray = \json_decode($dataJson, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException $exception) {
-            throw new \LogicException('Can not parse the given JSON string', 1675972764, $exception);
+            $dataArray = json_decode($dataJson, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $exception) {
+            throw new LogicException('Can not parse the given JSON string', 1675972764, $exception);
         }
         return self::deserializeStructCollection($dataArray, $itemType, $keyConvert, $collectionType);
     }

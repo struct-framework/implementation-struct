@@ -4,18 +4,25 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Private\Helper;
 
+use BackedEnum;
+use DateTime;
+use DateTimeInterface;
+use Exception;
+use function gettype;
+use function is_string;
 use Struct\Exception\TransformException;
+use UnitEnum;
 
 class TransformHelper
 {
-    public static function formatDateTime(\DateTimeInterface $dateTime): string
+    public static function formatDateTime(DateTimeInterface $dateTime): string
     {
         return $dateTime->format('c');
     }
 
-    public static function formatEnum(\UnitEnum $enum): mixed
+    public static function formatEnum(UnitEnum $enum): mixed
     {
-        if ($enum instanceof \BackedEnum) {
+        if ($enum instanceof BackedEnum) {
             return $enum->value;
         }
         return $enum->name;
@@ -23,7 +30,7 @@ class TransformHelper
 
     public static function transformBuildIn(mixed $value, string $toType): mixed
     {
-        $valueType = \gettype($value);
+        $valueType = gettype($value);
         switch ($valueType) {
             case 'string':
                 return self::parseString($value, $toType);
@@ -51,15 +58,15 @@ class TransformHelper
         throw new TransformException('Can not transform to type <' . $toType . '>', 1675967900);
     }
 
-    protected static function parseString(mixed $value, string $type): string|\DateTimeInterface
+    protected static function parseString(mixed $value, string $type): string|DateTimeInterface
     {
-        if (\is_string($value) === false) {
+        if (is_string($value) === false) {
             throw new TransformException('The value is not an string', 1675967906);
         }
-        if (is_a($type, \DateTimeInterface::class, true)) {
+        if (is_a($type, DateTimeInterface::class, true)) {
             try {
-                return new \DateTime($value);
-            } catch (\Exception $exception) {
+                return new DateTime($value);
+            } catch (Exception $exception) {
                 throw new TransformException('String <' . $value . '> can not be parsed as DateTime', 1675967909, $exception);
             }
         }

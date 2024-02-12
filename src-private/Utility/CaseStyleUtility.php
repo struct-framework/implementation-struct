@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Private\Utility;
 
+use function ctype_upper;
+use function strtolower;
 use Struct\Struct\Enum\KeyConvert;
 
 class CaseStyleUtility
@@ -13,8 +15,8 @@ class CaseStyleUtility
         $stringOutput = '';
         for ($index = 0; $index < strlen($string); $index++) {
             $character = $string[$index];
-            if (\ctype_upper($character) === true) {
-                $stringOutput .= '-' . \strtolower($character);
+            if (ctype_upper($character) === true) {
+                $stringOutput .= '-' . strtolower($character);
             } else {
                 $stringOutput .= $character;
             }

@@ -4,14 +4,23 @@ declare(strict_types=1);
 
 namespace Struct\Struct;
 
+use DateTime;
+use DateTimeInterface;
+use Exception;
 use Exception\Unexpected\UnexpectedException;
+use function is_a;
+use ReflectionClass;
+use ReflectionIntersectionType;
+use ReflectionNamedType;
 use ReflectionProperty;
+use ReflectionUnionType;
 use Struct\Attribute\DefaultValue;
 use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidValueException;
 use Struct\Struct\Factory\DataTypeFactory;
 use Struct\Struct\Private\Struct\StructureProperty;
+use Throwable;
 
 class StructPropertyUtility
 {
@@ -23,7 +32,7 @@ class StructPropertyUtility
     public static function readProperties(string|StructInterface $structure): array
     {
         $structureProperties = [];
-        if (\is_a($structure, StructInterface::class, true) === false) {
+        if (is_a($structure, StructInterface::class, true) === false) {
             throw new InvalidValueException('The structure must implement <' . StructInterface::class . '>', 1675967847);
         }
         $properties = self::getProperties($structure);
@@ -44,9 +53,9 @@ class StructPropertyUtility
     protected static function getProperties(string|StructInterface $structure): array
     {
         try {
-            $reflection = new \ReflectionClass($structure);
+            $reflection = new ReflectionClass($structure);
             return $reflection->getProperties();
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             throw new UnexpectedException(1652194304, $exception);
         }
     }
@@ -65,13 +74,13 @@ class StructPropertyUtility
         if ($type === null) {
             throw new InvalidValueException('The property <' . $property->name . '> must have an type declaration', 1652179807);
         }
-        if (is_a($type, \ReflectionIntersectionType::class) === true) {
+        if (is_a($type, ReflectionIntersectionType::class) === true) {
             throw new InvalidValueException('Intersection type is not supported at property <' . $property->name . '>', 1652179804);
         }
-        if (is_a($type, \ReflectionUnionType::class) === true) {
+        if (is_a($type, ReflectionUnionType::class) === true) {
             throw new InvalidValueException('Union type is not supported at property <' . $property->name . '>', 1652179804);
         }
-        if (is_a($type, \ReflectionNamedType::class) === false) {
+        if (is_a($type, ReflectionNamedType::class) === false) {
             throw new UnexpectedException(1652187714);
         }
 
@@ -100,17 +109,17 @@ class StructPropertyUtility
             $type = $property->getType();
             $typeName = $type->getName(); // @phpstan-ignore-line
 
-            if (\is_a($typeName, DataTypeInterface::class, true) === true) {
+            if (is_a($typeName, DataTypeInterface::class, true) === true) {
                 $defaultValueString = $attributeArguments[0];
                 $defaultValue = DataTypeFactory::create($typeName, $defaultValueString); // @phpstan-ignore-line
                 $structureProperty->hasDefaultValue = true;
                 $structureProperty->defaultValue = $defaultValue;
             }
 
-            if (\is_a($typeName, \DateTimeInterface::class, true) === true) {
+            if (is_a($typeName, DateTimeInterface::class, true) === true) {
                 try {
-                    $defaultValue = new \DateTime($attributeArguments[0]);
-                } catch (\Exception $exception) {
+                    $defaultValue = new DateTime($attributeArguments[0]);
+                } catch (Exception $exception) {
                     throw new UnexpectedException(1675967987, $exception);
                 }
                 $structureProperty->hasDefaultValue = true;
