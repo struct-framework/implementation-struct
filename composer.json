@@ -12,5 +12,10 @@
             "Struct\\Struct\\": "src",
             "Struct\\Struct\\Private\\": "src-private"
         }
+    },
+    "conflict": {
+        "struct/contracts-data-type": "*",
+        "struct/contracts-serialize": "*",
+        "struct/serializing": "*"
     }
 }
