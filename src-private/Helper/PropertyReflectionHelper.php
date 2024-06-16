@@ -85,10 +85,11 @@ class PropertyReflectionHelper
             throw new UnexpectedException(1652187714);
         }
 
-        $propertyReflection->type = $type->getName();
         $propertyReflection->isAllowsNull = $type->allowsNull();
         $propertyReflection->isHasDefaultValue = $reflectionProperty->hasDefaultValue();
         $propertyReflection->defaultValue = $reflectionProperty->getDefaultValue();
+
+        $propertyReflection->type = $type->getName();
         $propertyReflection->isBuiltin = $type->isBuiltin();
 
         self::readStructCollectionAttributes($reflectionProperty, $propertyReflection);

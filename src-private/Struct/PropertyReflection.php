@@ -6,10 +6,13 @@ namespace Struct\Struct\Private\Struct;
 
 class PropertyReflection
 {
-    public string $name = '';
     public string $type = '';
-    public bool $isAllowsNull = false;
     public bool $isBuiltin = false;
+
+    public string $name = '';
+
+    public bool $isAllowsNull = false;
+
     public bool $isHasDefaultValue = false;
     public mixed $defaultValue;
     public ?string $structTypeOfArrayOrCollection = null;
