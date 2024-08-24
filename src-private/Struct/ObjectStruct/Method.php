@@ -22,7 +22,6 @@ readonly class Method
         public ?bool $isStatic,
         public array $parameters,
         public array $attributes,
-    )
-    {}
+    ) {
+    }
 }
-

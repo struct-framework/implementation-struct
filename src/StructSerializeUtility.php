@@ -82,7 +82,6 @@ class StructSerializeUtility
         return $unSerializeUtility->_deserializeCollection($data, $itemType, $keyConvert, $collectionType);
     }
 
-
     /**
      * @template T of StructCollectionInterface
      * @param string $dataJson

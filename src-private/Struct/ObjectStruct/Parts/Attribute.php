@@ -14,6 +14,6 @@ readonly class Attribute
         public int $target,
         public bool $isRepeated,
         public array $arguments,
-    )
-    {}
+    ) {
+    }
 }

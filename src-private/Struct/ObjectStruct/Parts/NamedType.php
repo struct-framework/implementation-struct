@@ -9,6 +9,6 @@ readonly class NamedType
     public function __construct(
         public string $type,
         public bool $isBuiltin,
-    )
-    {}
+    ) {
+    }
 }

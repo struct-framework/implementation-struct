@@ -22,7 +22,6 @@ readonly class Parameter
         public array $attributes,
         public ?string $arrayType,
         public bool $isArrayKeyList,
-    )
-    {}
+    ) {
+    }
 }
-

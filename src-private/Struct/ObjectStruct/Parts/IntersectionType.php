@@ -8,6 +8,6 @@ readonly class IntersectionType
 {
     public function __construct(
         public array $namedTypes,
-    )
-    {}
+    ) {
+    }
 }

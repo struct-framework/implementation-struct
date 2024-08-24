@@ -19,7 +19,6 @@ readonly class ObjectStruct
         public array $constructorArguments,
         public array $properties,
         public array $methods,
-    )
-    {}
+    ) {
+    }
 }
-

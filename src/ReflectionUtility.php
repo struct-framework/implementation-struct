@@ -17,24 +17,23 @@ use Struct\Attribute\ArrayKeyList;
 use Struct\Attribute\ArrayList;
 use Struct\Exception\InvalidValueException;
 use Struct\Struct\Private\Struct\ObjectStruct;
-use Struct\Struct\Private\Struct\ObjectStruct\Property;
-use Struct\Struct\Private\Struct\ObjectStruct\Parts\IntersectionType;
-use Struct\Struct\Private\Struct\ObjectStruct\Parts\NamedType;
-use Struct\Struct\Private\Struct\ObjectStruct\Parts\Visibility;
 use Struct\Struct\Private\Struct\ObjectStruct\Method;
 use Struct\Struct\Private\Struct\ObjectStruct\Parameter;
 use Struct\Struct\Private\Struct\ObjectStruct\Parts\Attribute;
+use Struct\Struct\Private\Struct\ObjectStruct\Parts\IntersectionType;
+use Struct\Struct\Private\Struct\ObjectStruct\Parts\NamedType;
+use Struct\Struct\Private\Struct\ObjectStruct\Parts\Visibility;
+use Struct\Struct\Private\Struct\ObjectStruct\Property;
 
 class ReflectionUtility
 {
-
     /**
      * @param object|class-string<object> $object
      */
     public static function readObjectStruct(object|string $object): ObjectStruct
     {
         $objectName = $object;
-        if(is_object($object) === true) {
+        if (is_object($object) === true) {
             $objectName = $object::class;
         }
         try {
@@ -55,7 +54,6 @@ class ReflectionUtility
         return $objectStruct;
     }
 
-
     /**
      * @return array<Parameter>
      */
@@ -70,7 +68,6 @@ class ReflectionUtility
         $parameters = self::readParameters($reflectionParameters);
         return $parameters;
     }
-
 
     /**
      * @param array<ReflectionParameter> $reflectionParameters
@@ -108,7 +105,7 @@ class ReflectionUtility
         $returnTypeReflection = $methodReflection->getReturnType();
         $returnAllowsNull = false;
         $returnType = null;
-        if($returnTypeReflection !== null) {
+        if ($returnTypeReflection !== null) {
             if ($returnTypeReflection instanceof \ReflectionNamedType === false) {
                 throw new UnexpectedException(1724520780);
             }
@@ -125,7 +122,6 @@ class ReflectionUtility
         $parameters = self::readParameters($parameterReflections);
         $attributes = self::buildAttributes($methodReflection);
 
-
         $method = new Method(
             $name,
             $returnType,
@@ -140,7 +136,6 @@ class ReflectionUtility
 
     protected static function buildParameter(ReflectionParameter|ReflectionProperty $reflectionPropertyOrParameter): Parameter
     {
-
         $name = $reflectionPropertyOrParameter->getName();
         $type = $reflectionPropertyOrParameter->getType();
         if ($type === null) {
@@ -167,7 +162,7 @@ class ReflectionUtility
 
         $arrayType = null;
         $isArrayKeyList = false;
-        if(count($types) === 1 && $types[0]->type === 'array') {
+        if (count($types) === 1 && $types[0]->type === 'array') {
             $arrayType = self::readArrayType($reflectionPropertyOrParameter);
             $isArrayKeyList = self::readIsArrayKeyList($reflectionPropertyOrParameter);
         }
@@ -183,7 +178,6 @@ class ReflectionUtility
         );
         return $parameter;
     }
-
 
     /**
      * @return array<Attribute>
@@ -222,10 +216,8 @@ class ReflectionUtility
         return $properties;
     }
 
-
     protected static function buildProperty(ReflectionProperty $propertyReflection): Property
     {
-
         $parameter = self::buildParameter($propertyReflection);
         $isReadOnly = $propertyReflection->isReadOnly();
         $visibility = self::buildVisibility($propertyReflection);
@@ -242,36 +234,35 @@ class ReflectionUtility
     protected static function buildVisibility(ReflectionProperty|ReflectionMethod $reflectionPropertyOrParameter): Visibility
     {
         $visibility = null;
-        if($reflectionPropertyOrParameter->isPrivate() === true) {
+        if ($reflectionPropertyOrParameter->isPrivate() === true) {
             $visibility = Visibility::private;
         }
-        if($reflectionPropertyOrParameter->isPublic() === true) {
+        if ($reflectionPropertyOrParameter->isPublic() === true) {
             $visibility = Visibility::public;
         }
-        if($reflectionPropertyOrParameter->isProtected() === true) {
+        if ($reflectionPropertyOrParameter->isProtected() === true) {
             $visibility = Visibility::protected;
         }
-        if($visibility === null) {
+        if ($visibility === null) {
             throw new UnexpectedException(1724522961);
         }
         return $visibility;
     }
-
 
     protected static function buildPropertyTypes(ReflectionNamedType|ReflectionUnionType|ReflectionIntersectionType $type): array
     {
         $propertyTypes = [];
         if ($type instanceof ReflectionNamedType === true) {
             $newPropertyTypes = self::buildFromReflectionNamed($type);
-            $propertyTypes = array_merge($propertyTypes,  $newPropertyTypes);
+            $propertyTypes = array_merge($propertyTypes, $newPropertyTypes);
         }
         if ($type instanceof ReflectionUnionType === true) {
             $newPropertyTypes = self::buildFromUnionType($type);
-            $propertyTypes = array_merge($propertyTypes,  $newPropertyTypes);
+            $propertyTypes = array_merge($propertyTypes, $newPropertyTypes);
         }
         if ($type instanceof ReflectionIntersectionType === true) {
             $newPropertyTypes = self::buildFromIntersectionType($type);
-            $propertyTypes = array_merge($propertyTypes,  $newPropertyTypes);
+            $propertyTypes = array_merge($propertyTypes, $newPropertyTypes);
         }
         return $propertyTypes;
     }
@@ -297,16 +288,15 @@ class ReflectionUtility
         foreach ($type->getTypes() as $unionType) {
             if ($unionType instanceof ReflectionNamedType === true) {
                 $newPropertyTypes = self::buildFromReflectionNamed($unionType);
-                $propertyTypes = array_merge($propertyTypes,  $newPropertyTypes);
+                $propertyTypes = array_merge($propertyTypes, $newPropertyTypes);
             }
             if ($unionType instanceof ReflectionIntersectionType === true) {
                 $newPropertyTypes = self::buildFromIntersectionType($unionType);
-                $propertyTypes = array_merge($propertyTypes,  $newPropertyTypes);
+                $propertyTypes = array_merge($propertyTypes, $newPropertyTypes);
             }
         }
         return $propertyTypes;
     }
-
 
     protected static function buildFromReflectionNamed(ReflectionNamedType $type): array
     {
@@ -317,11 +307,10 @@ class ReflectionUtility
         return [$propertyType];
     }
 
-
     protected static function readIsArrayKeyList(ReflectionProperty|ReflectionParameter $reflectionPropertyOrParameter): bool
     {
         $arrayKeyListAttributes = $reflectionPropertyOrParameter->getAttributes(ArrayKeyList::class);
-        if(count($arrayKeyListAttributes) === 0) {
+        if (count($arrayKeyListAttributes) === 0) {
             return false;
         }
         return true;
@@ -354,6 +343,4 @@ class ReflectionUtility
         }
         return $arguments[0];
     }
-
-
 }
