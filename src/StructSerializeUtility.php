@@ -39,20 +39,6 @@ class StructSerializeUtility
         return $unSerializeUtility->deserialize($data, $type, $keyConvert);
     }
 
-    /**
-     * @template T of StructCollectionInterface
-     * @param object|array<mixed> $data
-     * @param class-string<StructInterface> $itemType
-     * @param KeyConvert|null $keyConvert
-     * @param class-string<T> $collectionType
-     * @return T
-     */
-    public static function deserializeStructCollection(object|array $data, string $itemType, ?KeyConvert $keyConvert = null, string $collectionType = StructCollection::class): StructCollectionInterface
-    {
-        $unSerializeUtility = new DeserializeUtility();
-        return $unSerializeUtility->_deserializeCollection($data, $itemType, $keyConvert, $collectionType);
-    }
-
     public static function serializeToJson(StructInterface|StructCollectionInterface $structure, ?KeyConvert $keyConvert = null): string
     {
         $dataArray = self::serialize($structure, $keyConvert);
@@ -83,11 +69,28 @@ class StructSerializeUtility
 
     /**
      * @template T of StructCollectionInterface
+     * @param object|array<mixed> $data
+     * @param class-string<StructInterface> $itemType
+     * @param KeyConvert|null $keyConvert
+     * @param class-string<T> $collectionType
+     * @return T
+     * @deprecated
+     */
+    public static function deserializeStructCollection(object|array $data, string $itemType, ?KeyConvert $keyConvert = null, string $collectionType = StructCollection::class): StructCollectionInterface
+    {
+        $unSerializeUtility = new DeserializeUtility();
+        return $unSerializeUtility->_deserializeCollection($data, $itemType, $keyConvert, $collectionType);
+    }
+
+
+    /**
+     * @template T of StructCollectionInterface
      * @param string $dataJson
      * @param class-string<StructInterface> $itemType
      * @param KeyConvert|null $keyConvert
      * @param class-string<T> $collectionType
      * @return T
+     * @deprecated
      */
     public static function deserializeCollectionFromJson(string $dataJson, string $itemType, ?KeyConvert $keyConvert = null, string $collectionType = StructCollection::class): StructCollectionInterface
     {

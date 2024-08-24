@@ -90,9 +90,10 @@ class DeserializeUtility
         if (is_a($type, StructInterface::class, true) === false) {
             throw new InvalidValueException('The type: <' . $type . '> must implement <' . StructInterface::class . '>', 1652123590);
         }
-        $structure = new $type();
-        $propertyReflections = PropertyReflectionHelper::readProperties($structure);
 
+        $propertyReflections = PropertyReflectionHelper::readProperties($type);
+
+        $values = [];
         foreach ($propertyReflections as $propertyReflection) {
             $propertyName = $propertyReflection->name;
             $value = null;
@@ -100,9 +101,19 @@ class DeserializeUtility
             if (array_key_exists($arrayKey, $dataArray) === true) {
                 $value = $dataArray[$arrayKey];
             }
-            $structure->$propertyName = $this->_unSerialize($value, $propertyReflection->type, $propertyReflection, $keyConvert);  // @phpstan-ignore-line
+            $values[$propertyName] = $this->_unSerialize($value, $propertyReflection->type, $propertyReflection, $keyConvert);
         }
 
+        $hasConstructor = PropertyReflectionHelper::hasConstructorProperties($type);
+
+        if ($hasConstructor === true) {
+            $structure = new $type(...$values);
+            return $structure;
+        }
+        $structure = new $type();
+        foreach ($values as $propertyName => $value) {
+            $structure->$propertyName = $value;  // @phpstan-ignore-line
+        }
         return $structure;
     }
 

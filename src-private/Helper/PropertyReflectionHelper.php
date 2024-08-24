@@ -10,6 +10,7 @@ use ReflectionClass;
 use ReflectionException;
 use ReflectionIntersectionType;
 use ReflectionNamedType;
+use ReflectionParameter;
 use ReflectionProperty;
 use ReflectionUnionType;
 use Struct\Attribute\ArrayKeyList;
@@ -24,9 +25,10 @@ use Throwable;
 class PropertyReflectionHelper
 {
     /**
-     * @return PropertyReflection[]
+     * @param StructInterface|class-string $structure
+     * @return array<PropertyReflection>
      */
-    public static function readProperties(StructInterface $structure): array
+    public static function readProperties(StructInterface|string $structure): array
     {
         $properties = [];
         try {
@@ -47,31 +49,28 @@ class PropertyReflectionHelper
     }
 
     /**
-     * @param class-string<StructCollectionInterface> $structCollectionType
-     * @return PropertyReflection
+     * @param StructInterface|class-string $structure
      */
-    public static function readPropertyOfStructCollection(string $structCollectionType): PropertyReflection
+    public static function hasConstructorProperties(StructInterface|string $structure): bool
     {
-        $propertyReflection = new PropertyReflection();
-        $propertyReflection->name = '';
-        $propertyReflection->type = $structCollectionType;
-        $propertyReflection->isAllowsNull = false;
-        $propertyReflection->isHasDefaultValue = false;
-        $propertyReflection->defaultValue = null;
-        $propertyReflection->isBuiltin = false;
-        $structType = self::readTypeByCurrent($propertyReflection->type);
-        if ($structType === StructInterface::class) {
-            throw new InvalidValueException('The StructCollection <' . $structCollectionType . '> must have an more specific return value at method current', 1698959659);
+        try {
+            $reflection = new ReflectionClass($structure);
+            // @phpstan-ignore-next-line
+        } catch (ReflectionException $exception) {
+            throw new UnexpectedException(1652124640, $exception);
         }
-        $propertyReflection->structTypeOfArrayOrCollection = $structType;
-        return $propertyReflection;
+        $constructor = $reflection->getConstructor();
+        if ($constructor === null) {
+            return false;
+        }
+        return true;
     }
 
-    protected static function buildPropertyReflection(ReflectionProperty $reflectionProperty): PropertyReflection
+    protected static function buildPropertyReflection(ReflectionProperty|ReflectionParameter $reflectionPropertyOrParameter): PropertyReflection
     {
         $propertyReflection = new PropertyReflection();
-        $propertyReflection->name = $reflectionProperty->getName();
-        $type = $reflectionProperty->getType();
+        $propertyReflection->name = $reflectionPropertyOrParameter->getName();
+        $type = $reflectionPropertyOrParameter->getType();
         if ($type === null) {
             throw new InvalidValueException('The property <' . $propertyReflection->name . '> must have an type declaration', 1652179807);
         }
@@ -86,24 +85,26 @@ class PropertyReflectionHelper
         }
 
         $propertyReflection->isAllowsNull = $type->allowsNull();
-        $propertyReflection->isHasDefaultValue = $reflectionProperty->hasDefaultValue();
-        $propertyReflection->defaultValue = $reflectionProperty->getDefaultValue();
+        if ($reflectionPropertyOrParameter instanceof ReflectionProperty) {
+            $propertyReflection->isHasDefaultValue = $reflectionPropertyOrParameter->hasDefaultValue();
+            $propertyReflection->defaultValue = $reflectionPropertyOrParameter->getDefaultValue();
+        }
 
         $propertyReflection->type = $type->getName();
         $propertyReflection->isBuiltin = $type->isBuiltin();
 
-        self::readStructCollectionAttributes($reflectionProperty, $propertyReflection);
-        self::readArrayAttributes($reflectionProperty, $propertyReflection);
+        self::readStructCollectionAttributes($reflectionPropertyOrParameter, $propertyReflection);
+        self::readArrayAttributes($reflectionPropertyOrParameter, $propertyReflection);
 
         return $propertyReflection;
     }
 
-    protected static function readStructCollectionAttributes(ReflectionProperty $reflectionProperty, PropertyReflection $propertyReflection): void
+    protected static function readStructCollectionAttributes(ReflectionProperty|ReflectionParameter $reflectionPropertyOrParameter, PropertyReflection $propertyReflection): void
     {
         if (is_a($propertyReflection->type, StructCollectionInterface::class, true) === false) {
             return;
         }
-        $structTypes = $reflectionProperty->getAttributes(StructType::class);
+        $structTypes = $reflectionPropertyOrParameter->getAttributes(StructType::class);
         if (count($structTypes) === 1) {
             $structType = $structTypes[0];
             $arguments = $structType->getArguments();
@@ -116,7 +117,7 @@ class PropertyReflectionHelper
         }
         $structType = self::readTypeByCurrent($propertyReflection->type);
         if ($structType === StructInterface::class) {
-            throw new InvalidValueException('The property <' . $reflectionProperty->getName() . '> must have an "StructType" or more specific return value at method current', 1698953636);
+            throw new InvalidValueException('The property <' . $reflectionPropertyOrParameter->getName() . '> must have an "StructType" or more specific return value at method current', 1698953636);
         }
         $propertyReflection->structTypeOfArrayOrCollection = $structType;
     }
@@ -140,13 +141,13 @@ class PropertyReflectionHelper
         return $structType;
     }
 
-    protected static function readArrayAttributes(ReflectionProperty $reflectionProperty, PropertyReflection $propertyReflection): void
+    protected static function readArrayAttributes(ReflectionProperty|ReflectionParameter $reflectionPropertyOrParameter, PropertyReflection $propertyReflection): void
     {
         if ($propertyReflection->type !== 'array') {
             return;
         }
-        $arrayListAttributes = $reflectionProperty->getAttributes(ArrayList::class);
-        $arrayKeyListAttributes = $reflectionProperty->getAttributes(ArrayKeyList::class);
+        $arrayListAttributes = $reflectionPropertyOrParameter->getAttributes(ArrayList::class);
+        $arrayKeyListAttributes = $reflectionPropertyOrParameter->getAttributes(ArrayKeyList::class);
         if (count($arrayListAttributes) === 0 && count($arrayKeyListAttributes) === 0) {
             return;
         }
@@ -155,7 +156,7 @@ class PropertyReflectionHelper
             count($arrayListAttributes) > 1 ||
             count($arrayKeyListAttributes) >  1
         ) {
-            throw new InvalidValueException('The property <' . $reflectionProperty->getName() . '> can not be ArrayList and ArrayKeyList', 1652195496);
+            throw new InvalidValueException('The property <' . $reflectionPropertyOrParameter->getName() . '> can not be ArrayList and ArrayKeyList', 1652195496);
         }
         $attributes = $arrayListAttributes;
         if (count($attributes) === 0) {
