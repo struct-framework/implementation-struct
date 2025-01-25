@@ -11,7 +11,7 @@ use Exception\Unexpected\UnexpectedException;
 use function gettype;
 use ReflectionClass;
 use ReflectionException;
-use Struct\Contracts\DataTypeInterface;
+use Struct\Contracts\DataTypeInterfaceWritable;
 use Struct\Contracts\StructCollectionInterface;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidStructException;
@@ -81,7 +81,7 @@ class StructHashUtility
         return $hash;
     }
 
-    protected static function buildHashFromDataType(DataTypeInterface $value, HashAlgorithm $algorithm): string
+    protected static function buildHashFromDataType(DataTypeInterfaceWritable $value, HashAlgorithm $algorithm): string
     {
         $data = hash($algorithm->value, $value::class, true);
         $data .= $value->serializeToString();
@@ -168,7 +168,7 @@ class StructHashUtility
         if ($value instanceof UnitEnum) {
             return DataType::Enum;
         }
-        if ($value instanceof DataTypeInterface) {
+        if ($value instanceof DataTypeInterfaceWritable) {
             return DataType::DataType;
         }
         if ($type === 'array') {

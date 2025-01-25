@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace Struct\Struct\Factory;
 
 use DateTimeInterface;
+use Struct\Attribute\DefaultValue;
+use Struct\Struct\Internal\Placeholder\Undefined;
+use Struct\Struct\Internal\Struct\ObjectSignature\Parameter;
+use Struct\Struct\Internal\Struct\ObjectSignature\Parts\Attribute;
+use Struct\Struct\Internal\Struct\ObjectSignature\Parts\NamedType;
+use Struct\Struct\ReflectionUtility;
 use function is_a;
-use Struct\Contracts\DataTypeInterface;
-use Struct\Contracts\StructCollectionInterface;
+use Struct\Contracts\DataTypeInterfaceWritable;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidStructException;
-use Struct\Struct\Private\Placeholder\Undefined;
-use Struct\Struct\Private\Struct\StructureProperty;
-use Struct\Struct\StructPropertyUtility;
 use UnitEnum;
 
 class StructFactory
@@ -24,14 +26,13 @@ class StructFactory
      */
     public static function create(string $structType): StructInterface
     {
-        if (is_a($structType, StructInterface::class, true) === false) {
-            throw new InvalidStructException('The structureType <' . $structType . '> must implement the interface <' . StructInterface::class . '>', 1675967937);
-        }
+        $structSignature = ReflectionUtility::readObjectSignature($structType);
+        $properties = $structSignature->properties;
+
         $structure = new $structType();
-        $properties = StructPropertyUtility::readProperties($structure);
         foreach ($properties as $property) {
-            $name = $property->name;
-            $value = self::buildValue($property);
+            $name = $property->parameter->name;
+            $value = self::buildValue($property->parameter);
             if ($value instanceof Undefined === false) {
                 $structure->$name = $value; // @phpstan-ignore-line
             }
@@ -39,40 +40,82 @@ class StructFactory
         return $structure;
     }
 
-    /**
-     * @param StructureProperty $property
-     * @return mixed
-     */
-    protected static function buildValue(StructureProperty $property): mixed
+    protected static function buildValue(Parameter $parameter): mixed
     {
-        if ($property->hasDefaultValue) {
-            return $property->defaultValue;
+        if ($parameter->hasDefaultValue) {
+            return $parameter->defaultValue;
         }
-        if ($property->allowsNull) {
+        if ($parameter->isAllowsNull) {
             return null;
         }
-        $type = $property->type;
-        if ($type === 'array') {
+        /** @var NamedType $type */
+        $type = $parameter->types[0];
+        $typeString = $type->type;
+
+        if ($typeString === 'array') {
             return [];
         }
-        if (is_a($type, StructCollectionInterface::class, true) === true) {
-            return new $type();
+        if (is_a($typeString, StructInterface::class, true) === true) {
+            return self::create($type->type);
         }
-        if (is_a($type, StructInterface::class, true) === true) {
-            return self::create($type);
+
+        $defaultValue = self::readDefaultValue($parameter, $typeString);
+        if($defaultValue !== null) {
+            return $defaultValue;
+        }
+
+        if (
+            is_a($typeString, DateTimeInterface::class, true) === true ||
+            is_a($typeString, DataTypeInterfaceWritable::class, true) === true
+        ) {
+            return self::create($type->type);
         }
         if (
-            $type === 'string' ||
-            $type === 'int' ||
-            $type === 'float' ||
-            $type === 'bool' ||
-            is_a($type, DateTimeInterface::class, true) === true ||
-            is_a($type, DataTypeInterface::class, true) === true ||
-            is_a($type, UnitEnum::class, true) === true
+            $typeString === 'string' ||
+            $typeString === 'int' ||
+            $typeString === 'float' ||
+            $typeString === 'bool' ||
+            is_a($typeString, DateTimeInterface::class, true) === true ||
+            is_a($typeString, DataTypeInterfaceWritable::class, true) === true ||
+            is_a($typeString, UnitEnum::class, true) === true
         ) {
             $undefined = new Undefined();
             return $undefined;
         }
-        throw new InvalidStructException('The type <' . $type . '> is not supported', 1675967989);
+        throw new InvalidStructException('The type <' . $type->type . '> is not supported', 1675967989);
+    }
+
+    protected static function readDefaultValue(Parameter $parameter, string $typeString): mixed
+    {
+        $defaultValue = self::findDefaultValueString($parameter,DefaultValue::class);
+        if($defaultValue === null) {
+            return null;
+        }
+        if(is_a($typeString, DataTypeInterfaceWritable::class, true) === true) {
+            $value = new $typeString($defaultValue);
+            return $value;
+        }
+        if(is_a($typeString, DateTimeInterface::class, true) === true) {
+            $value = new \DateTime($defaultValue);
+            return $value;
+        }
+        return null;
+    }
+
+    protected static function findDefaultValueString(Parameter $parameter, string $attributName): ?string
+    {
+        foreach ($parameter->attributes as $attribute) {
+            if($attribute->name === DefaultValue::class) {
+                if(count($attribute->arguments) !== 1) {
+                    return null;
+                }
+                $defaultValue = $attribute->arguments[0];
+                if(is_string($defaultValue) === false) {
+                    return null;
+                }
+                return $defaultValue;
+            }
+        }
+        return null;
     }
 }

@@ -2,13 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Struct\Struct\Private\Struct;
+namespace Struct\Struct\Internal\Struct;
 
-use Struct\Struct\Private\Struct\ObjectStruct\Method;
-use Struct\Struct\Private\Struct\ObjectStruct\Parameter;
-use Struct\Struct\Private\Struct\ObjectStruct\Property;
+use Struct\Struct\Internal\Struct\ObjectSignature\Method;
+use Struct\Struct\Internal\Struct\ObjectSignature\Parameter;
+use Struct\Struct\Internal\Struct\ObjectSignature\Property;
 
-readonly class ObjectStruct
+/**
+ * @internal
+ */
+readonly class ObjectSignature
 {
     /**
      * @param array<Parameter> $constructorArguments

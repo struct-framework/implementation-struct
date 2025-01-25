@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Struct\Struct\Private\Helper;
+namespace Struct\Struct\Internal\Helper;
 
 use BackedEnum;
 use DateTime;
@@ -13,7 +13,10 @@ use function is_string;
 use Struct\Exception\TransformException;
 use UnitEnum;
 
-class TransformHelper
+/**
+ * @internal
+ */
+class FormatHelper
 {
     public static function formatDateTime(DateTimeInterface $dateTime): string
     {
@@ -28,7 +31,7 @@ class TransformHelper
         return $enum->name;
     }
 
-    public static function transformBuildIn(mixed $value, string $toType): mixed
+    public static function formatBuildIn(mixed $value, string $toType): mixed
     {
         $valueType = gettype($value);
         switch ($valueType) {

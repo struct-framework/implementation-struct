@@ -2,8 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Struct\Struct\Private\Enum;
+namespace Struct\Struct\Internal\Enum;
 
+/**
+ * @internal
+ */
 enum SerializeDataType: string
 {
     case NullType = 'null';

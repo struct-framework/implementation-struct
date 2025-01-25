@@ -2,8 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Struct\Struct\Private\Enum;
+namespace Struct\Struct\Internal\Enum;
 
+/**
+ * @internal
+ */
 enum DataType: string
 {
     case NULL             = '8b44ad0e-1b6f-4562-b975-87c9963a8841';

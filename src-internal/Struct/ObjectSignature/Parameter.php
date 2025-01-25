@@ -2,16 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Struct\Struct\Private\Struct\ObjectStruct;
+namespace Struct\Struct\Internal\Struct\ObjectSignature;
 
-use Struct\Struct\Private\Struct\ObjectStruct\Parts\IntersectionType;
-use Struct\Struct\Private\Struct\ObjectStruct\Parts\NamedType;
-
+use Struct\Struct\Internal\Struct\ObjectSignature\Parts\IntersectionType;
+use Struct\Struct\Internal\Struct\ObjectSignature\Parts\NamedType;
+use Struct\Struct\Internal\Struct\ObjectSignature\Parts\Attribute;
+/**
+ * @internal
+ */
 readonly class Parameter
 {
     /**
      * @param array<NamedType|IntersectionType> $types
-     * param array<Attribute> $attributes
+     * @param array<Attribute> $attributes
      */
     public function __construct(
         public string $name,
@@ -20,8 +23,6 @@ readonly class Parameter
         public bool $hasDefaultValue,
         public mixed $defaultValue,
         public array $attributes,
-        public ?string $arrayType,
-        public bool $isArrayKeyList,
     ) {
     }
 }

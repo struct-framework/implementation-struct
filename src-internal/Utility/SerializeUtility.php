@@ -2,39 +2,37 @@
 
 declare(strict_types=1);
 
-namespace Struct\Struct\Private\Utility;
+namespace Struct\Struct\Internal\Utility;
 
+use Struct\Exception\SerializeException;
+use Struct\Struct\Internal\Helper\FormatHelper;
 use function array_is_list;
-use DateTimeInterface;
-use Exception\Unexpected\UnexpectedException;
 use function gettype;
 use function is_a;
 use function is_array;
 use function is_object;
+
+use DateTimeInterface;
+use Exception\Unexpected\UnexpectedException;
 use ReflectionClass;
 use ReflectionException;
-use Struct\Contracts\DataTypeInterface;
-use Struct\Contracts\StructCollectionInterface;
+use Struct\Contracts\DataTypeInterfaceWritable;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidStructException;
 use Struct\Struct\Enum\KeyConvert;
-use Struct\Struct\Private\Helper\TransformHelper;
 use UnitEnum;
 
+/**
+ * @internal
+ */
 class SerializeUtility
 {
     /**
      * @return array<mixed>
      */
-    public function serialize(StructInterface|StructCollectionInterface $structure, ?KeyConvert $keyConvert): array
+    public function serialize(StructInterface $structure, ?KeyConvert $keyConvert): array
     {
-        if ($structure instanceof StructInterface) {
-            $serializedData = $this->_serialize($structure, $keyConvert);
-        }
-        if ($structure instanceof StructCollectionInterface) {
-            /** @var array<mixed> $serializedData */
-            $serializedData = $this->formatComplexValue($structure, $keyConvert);
-        }
+        $serializedData = $this->_serialize($structure, $keyConvert);
         return $serializedData;
     }
 
@@ -48,7 +46,12 @@ class SerializeUtility
         $propertyNames = $this->readPropertyNames($structure);
         foreach ($propertyNames as $propertyName) {
             $value = $structure->$propertyName; // @phpstan-ignore-line
-            $formattedValue = $this->formatValue($value, $keyConvert);
+            try {
+                $formattedValue = $this->formatValue($value, $keyConvert);
+            } catch (SerializeException $serializeException) {
+                throw new SerializeException(1724534315, $structure::class, null, $serializeException);
+            }
+
             if ($formattedValue === null) {
                 continue;
             }
@@ -97,7 +100,6 @@ class SerializeUtility
         ) {
             return $value;
         }
-
         return $this->formatComplexValue($value, $keyConvert);
     }
 
@@ -106,18 +108,13 @@ class SerializeUtility
         if (is_array($value)) {
             return $this->formatArrayValue($value, $keyConvert);
         }
-        if ($value instanceof StructCollectionInterface) {
-            return $this->formatArrayValue($value->getValues(), $keyConvert);
-        }
         if ($value instanceof UnitEnum) {
-            return TransformHelper::formatEnum($value);
+            return FormatHelper::formatEnum($value);
         }
-
         if (is_object($value)) {
             return $this->formatObjectValue($value, $keyConvert);
         }
-
-        throw new InvalidStructException('The type of value is not supported', 1651515873);
+        throw new SerializeException(1724534215, null, 'The type of value is not supported');
     }
 
     /**
@@ -145,14 +142,19 @@ class SerializeUtility
     protected function formatObjectValue(object $value, ?KeyConvert $keyConvert): array|string
     {
         if (is_a($value, DateTimeInterface::class)) {
-            return TransformHelper::formatDateTime($value);
+            return FormatHelper::formatDateTime($value);
         }
         if (is_a($value, StructInterface::class)) {
             return $this->_serialize($value, $keyConvert);
         }
-        if (is_a($value, DataTypeInterface::class)) {
-            return $value->serializeToString();
+        if (is_a($value, DataTypeInterfaceWritable::class)) {
+            try {
+                return $value->serializeToString();
+            } catch (\Throwable $exception) {
+                throw new SerializeException(1724533985, $value::class, 'Can not serialize DataType', $exception);
+            }
+
         }
-        throw new InvalidStructException('The type of value is not supported', 1651521990);
+        throw new SerializeException(1724533843, $value::class, 'The type of value is not supported');
     }
 }

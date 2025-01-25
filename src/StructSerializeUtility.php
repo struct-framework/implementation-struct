@@ -5,23 +5,22 @@ declare(strict_types=1);
 namespace Struct\Struct;
 
 use Exception\Unexpected\UnexpectedException;
+use Struct\Struct\Internal\Utility\DeserializeUtility;
+use Struct\Struct\Internal\Utility\SerializeUtility;
 use function json_decode;
 use function json_encode;
 use JsonException;
 use LogicException;
-use Struct\Contracts\StructCollection;
-use Struct\Contracts\StructCollectionInterface;
 use Struct\Contracts\StructInterface;
 use Struct\Struct\Enum\KeyConvert;
-use Struct\Struct\Private\Utility\DeserializeUtility;
-use Struct\Struct\Private\Utility\SerializeUtility;
+
 
 class StructSerializeUtility
 {
     /**
      * @return mixed[]
      */
-    public static function serialize(StructInterface|StructCollectionInterface $structure, ?KeyConvert $keyConvert = null): array
+    public static function serialize(StructInterface $structure, ?KeyConvert $keyConvert = null): array
     {
         $serializeUtility = new SerializeUtility();
         return $serializeUtility->serialize($structure, $keyConvert);
@@ -39,7 +38,7 @@ class StructSerializeUtility
         return $unSerializeUtility->deserialize($data, $type, $keyConvert);
     }
 
-    public static function serializeToJson(StructInterface|StructCollectionInterface $structure, ?KeyConvert $keyConvert = null): string
+    public static function serializeToJson(StructInterface $structure, ?KeyConvert $keyConvert = null): string
     {
         $dataArray = self::serialize($structure, $keyConvert);
         $dataJson = json_encode($dataArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
@@ -65,40 +64,5 @@ class StructSerializeUtility
             throw new LogicException('Can not parse the given JSON string', 1675972764, $exception);
         }
         return self::deserialize($dataArray, $type, $keyConvert);
-    }
-
-    /**
-     * @template T of StructCollectionInterface
-     * @param object|array<mixed> $data
-     * @param class-string<StructInterface> $itemType
-     * @param KeyConvert|null $keyConvert
-     * @param class-string<T> $collectionType
-     * @return T
-     * @deprecated
-     */
-    public static function deserializeStructCollection(object|array $data, string $itemType, ?KeyConvert $keyConvert = null, string $collectionType = StructCollection::class): StructCollectionInterface
-    {
-        $unSerializeUtility = new DeserializeUtility();
-        return $unSerializeUtility->_deserializeCollection($data, $itemType, $keyConvert, $collectionType);
-    }
-
-    /**
-     * @template T of StructCollectionInterface
-     * @param string $dataJson
-     * @param class-string<StructInterface> $itemType
-     * @param KeyConvert|null $keyConvert
-     * @param class-string<T> $collectionType
-     * @return T
-     * @deprecated
-     */
-    public static function deserializeCollectionFromJson(string $dataJson, string $itemType, ?KeyConvert $keyConvert = null, string $collectionType = StructCollection::class): StructCollectionInterface
-    {
-        try {
-            /** @var mixed[] $dataArray */
-            $dataArray = json_decode($dataJson, true, 512, JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new LogicException('Can not parse the given JSON string', 1675972764, $exception);
-        }
-        return self::deserializeStructCollection($dataArray, $itemType, $keyConvert, $collectionType);
     }
 }

@@ -2,12 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Struct\Struct\Private\Utility;
+namespace Struct\Struct\Internal\Utility;
 
 use function ctype_upper;
 use function strtolower;
 use Struct\Struct\Enum\KeyConvert;
 
+/**
+ * @internal
+ */
 class CaseStyleUtility
 {
     public static function lowerCamelToSnake(string $string): string

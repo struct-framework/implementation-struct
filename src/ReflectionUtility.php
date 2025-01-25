@@ -13,24 +13,22 @@ use ReflectionNamedType;
 use ReflectionParameter;
 use ReflectionProperty;
 use ReflectionUnionType;
-use Struct\Attribute\ArrayKeyList;
-use Struct\Attribute\ArrayList;
 use Struct\Exception\InvalidValueException;
-use Struct\Struct\Private\Struct\ObjectStruct;
-use Struct\Struct\Private\Struct\ObjectStruct\Method;
-use Struct\Struct\Private\Struct\ObjectStruct\Parameter;
-use Struct\Struct\Private\Struct\ObjectStruct\Parts\Attribute;
-use Struct\Struct\Private\Struct\ObjectStruct\Parts\IntersectionType;
-use Struct\Struct\Private\Struct\ObjectStruct\Parts\NamedType;
-use Struct\Struct\Private\Struct\ObjectStruct\Parts\Visibility;
-use Struct\Struct\Private\Struct\ObjectStruct\Property;
+use Struct\Struct\Internal\Struct\ObjectSignature;
+use Struct\Struct\Internal\Struct\ObjectSignature\Method;
+use Struct\Struct\Internal\Struct\ObjectSignature\Parameter;
+use Struct\Struct\Internal\Struct\ObjectSignature\Parts\Attribute;
+use Struct\Struct\Internal\Struct\ObjectSignature\Parts\IntersectionType;
+use Struct\Struct\Internal\Struct\ObjectSignature\Parts\NamedType;
+use Struct\Struct\Internal\Struct\ObjectSignature\Parts\Visibility;
+use Struct\Struct\Internal\Struct\ObjectSignature\Property;
 
 class ReflectionUtility
 {
     /**
      * @param object|class-string<object> $object
      */
-    public static function readObjectStruct(object|string $object): ObjectStruct
+    public static function readObjectSignature(object|string $object): ObjectSignature
     {
         $objectName = $object;
         if (is_object($object) === true) {
@@ -46,7 +44,7 @@ class ReflectionUtility
         $properties = self::readProperties($reflection);
         $methods = self::readMethods($reflection);
 
-        $objectStruct = new ObjectStruct(
+        $objectStruct = new ObjectSignature(
             $constructorArguments,
             $properties,
             $methods,
@@ -104,15 +102,9 @@ class ReflectionUtility
         $name = $methodReflection->getName();
         $returnTypeReflection = $methodReflection->getReturnType();
         $returnAllowsNull = false;
-        $returnType = null;
+        $returnTypes = null;
         if ($returnTypeReflection !== null) {
-            if ($returnTypeReflection instanceof \ReflectionNamedType === false) {
-                throw new UnexpectedException(1724520780);
-            }
-            $returnType = new NamedType(
-                $returnTypeReflection->getName(),
-                $returnTypeReflection->isBuiltin(),
-            );
+            $returnTypes = self::buildTypes($returnTypeReflection);
             $returnAllowsNull = $returnTypeReflection->allowsNull();
         }
 
@@ -124,7 +116,7 @@ class ReflectionUtility
 
         $method = new Method(
             $name,
-            $returnType,
+            $returnTypes,
             $returnAllowsNull,
             $visibility,
             $isStatic,
@@ -141,7 +133,7 @@ class ReflectionUtility
         if ($type === null) {
             throw new InvalidValueException('The property <' . $name . '> must have an type declaration', 1724442038);
         }
-        $types = self::buildPropertyTypes($type);
+        $types = self::buildTypes($type);
         $isAllowsNull = $type->allowsNull();
         $defaultValue = null;
 
@@ -160,12 +152,6 @@ class ReflectionUtility
 
         $attributes = self::buildAttributes($reflectionPropertyOrParameter);
 
-        $arrayType = null;
-        $isArrayKeyList = false;
-        if (count($types) === 1 && $types[0]->type === 'array') {
-            $arrayType = self::readArrayType($reflectionPropertyOrParameter);
-            $isArrayKeyList = self::readIsArrayKeyList($reflectionPropertyOrParameter);
-        }
         $parameter = new Parameter(
             $name,
             $types,
@@ -173,8 +159,6 @@ class ReflectionUtility
             $hasDefaultValue,
             $defaultValue,
             $attributes,
-            $arrayType,
-            $isArrayKeyList,
         );
         return $parameter;
     }
@@ -249,7 +233,7 @@ class ReflectionUtility
         return $visibility;
     }
 
-    protected static function buildPropertyTypes(ReflectionNamedType|ReflectionUnionType|ReflectionIntersectionType $type): array
+    protected static function buildTypes(ReflectionNamedType|ReflectionUnionType|ReflectionIntersectionType $type): array
     {
         $propertyTypes = [];
         if ($type instanceof ReflectionNamedType === true) {
@@ -305,42 +289,5 @@ class ReflectionUtility
             $type->isBuiltin(),
         );
         return [$propertyType];
-    }
-
-    protected static function readIsArrayKeyList(ReflectionProperty|ReflectionParameter $reflectionPropertyOrParameter): bool
-    {
-        $arrayKeyListAttributes = $reflectionPropertyOrParameter->getAttributes(ArrayKeyList::class);
-        if (count($arrayKeyListAttributes) === 0) {
-            return false;
-        }
-        return true;
-    }
-
-    protected static function readArrayType(ReflectionProperty|ReflectionParameter $reflectionPropertyOrParameter): ?string
-    {
-        $arrayListAttributes = $reflectionPropertyOrParameter->getAttributes(ArrayList::class);
-        $arrayKeyListAttributes = $reflectionPropertyOrParameter->getAttributes(ArrayKeyList::class);
-        if (count($arrayListAttributes) === 0 && count($arrayKeyListAttributes) === 0) {
-            return null;
-        }
-        if (count($arrayListAttributes) > 1 || count($arrayKeyListAttributes) >  1) {
-            throw new InvalidValueException('The property <' . $reflectionPropertyOrParameter->getName() . '> can not have multiple ArrayList and ArrayKeyList', 1724442044);
-        }
-        if (count($arrayListAttributes) === 1 && count($arrayKeyListAttributes) ===  1) {
-            throw new InvalidValueException('The property <' . $reflectionPropertyOrParameter->getName() . '> can not be ArrayList and ArrayKeyList', 1724442047);
-        }
-        $attributes = $arrayListAttributes;
-        if (count($arrayKeyListAttributes) === 1) {
-            $attributes = $arrayKeyListAttributes;
-        }
-        $attribute = $attributes[0];
-        $arguments = $attribute->getArguments();
-        if (
-            count($arguments) !== 1 ||
-            is_string($arguments[0]) === false
-        ) {
-            throw new InvalidValueException('The property <' . $reflectionPropertyOrParameter->getName() . '> must have in ArrayList and ArrayKeyList with one argument type', 1724442049);
-        }
-        return $arguments[0];
     }
 }

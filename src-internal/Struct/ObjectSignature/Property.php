@@ -2,10 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Struct\Struct\Private\Struct\ObjectStruct;
+namespace Struct\Struct\Internal\Struct\ObjectSignature;
 
-use Struct\Struct\Private\Struct\ObjectStruct\Parts\Visibility;
+use Struct\Struct\Internal\Struct\ObjectSignature\Parts\Visibility;
 
+/**
+ * @internal
+ */
 readonly class Property
 {
     public function __construct(
