@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Struct\Struct;
 
-
 use Exception\Unexpected\UnexpectedException;
 use Struct\Attribute\ArrayKeyList;
 use Struct\Attribute\ArrayList;
@@ -23,7 +22,7 @@ class StructSignatureUtility
         $propertyStrings = [];
         foreach ($signature->properties as $property) {
             $propertyString = $property->parameter->name;
-            if($withType === true) {
+            if ($withType === true) {
                 $propertyString .= ':' . self::_readType($property);
             }
             $propertyStrings[] = $propertyString;
@@ -39,15 +38,14 @@ class StructSignatureUtility
         return $propertyValueStrings;
     }
 
-
     protected static function buildValues(array &$propertyValueStrings, mixed $propertyValue, string $prefix): void
     {
-        if($propertyValue instanceof StructInterface === true) {
+        if ($propertyValue instanceof StructInterface === true) {
             self::buildValueStruct($propertyValueStrings, $propertyValue, $prefix);
             return;
         }
-        if(is_array($propertyValue) === true) {
-            self::buildValueArray($propertyValueStrings, $propertyValue,  $prefix . '_array');
+        if (is_array($propertyValue) === true) {
+            self::buildValueArray($propertyValueStrings, $propertyValue, $prefix . '_array');
             return;
         }
         $dataType = self::findDataType($propertyValue);
@@ -61,7 +59,7 @@ class StructSignatureUtility
             'double',
             'string'            => (string) $propertyValue, // @phpstan-ignore-line
         };
-        $propertyValueStrings[] = $prefix .'_' . $dataType . ':' .self::encode($data);
+        $propertyValueStrings[] = $prefix . '_' . $dataType . ':' . self::encode($data);
     }
 
     protected static function encode(string $value): string
@@ -90,7 +88,7 @@ class StructSignatureUtility
 
     protected static function buildValueBoolean(bool $value): string
     {
-        if($value === true) {
+        if ($value === true) {
             return 'true';
         }
         return 'false';
@@ -116,7 +114,6 @@ class StructSignatureUtility
         }
         return $data;
     }
-
 
     protected static function findDataType(mixed $value): string
     {
@@ -158,23 +155,20 @@ class StructSignatureUtility
     protected static function _readType(Property $property): string
     {
         $propertyType = $property->parameter->types[0]->type;
-        if($propertyType !== 'array') {
+        if ($propertyType !== 'array') {
             return $propertyType;
         }
         $propertyType .= '<';
         $attributes = $property->parameter->attributes;
         foreach ($attributes as $attribute) {
-            if($attribute->name === ArrayList::class) {
+            if ($attribute->name === ArrayList::class) {
                 $propertyType .= $attribute->arguments[0];
             }
-            if($attribute->name === ArrayKeyList::class) {
-                $propertyType .= 'string,' .$attribute->arguments[0];
+            if ($attribute->name === ArrayKeyList::class) {
+                $propertyType .= 'string,' . $attribute->arguments[0];
             }
         }
         $propertyType .= '>';
         return $propertyType;
     }
-
-
-
 }

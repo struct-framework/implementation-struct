@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Internal\Utility;
 
-use Struct\Exception\SerializeException;
-use Struct\Struct\Internal\Helper\FormatHelper;
 use function array_is_list;
+use DateTimeInterface;
+use Exception\Unexpected\UnexpectedException;
 use function gettype;
 use function is_a;
 use function is_array;
 use function is_object;
 
-use DateTimeInterface;
-use Exception\Unexpected\UnexpectedException;
 use ReflectionClass;
 use ReflectionException;
 use Struct\Contracts\DataTypeInterfaceWritable;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidStructException;
+use Struct\Exception\SerializeException;
 use Struct\Struct\Enum\KeyConvert;
+use Struct\Struct\Internal\Helper\FormatHelper;
 use UnitEnum;
 
 /**
@@ -153,7 +153,6 @@ class SerializeUtility
             } catch (\Throwable $exception) {
                 throw new SerializeException(1724533985, $value::class, 'Can not serialize DataType', $exception);
             }
-
         }
         throw new SerializeException(1724533843, $value::class, 'The type of value is not supported');
     }

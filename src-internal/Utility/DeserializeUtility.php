@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Internal\Utility;
 
-use Struct\Struct\Internal\Helper\FormatHelper;
-use Struct\Struct\Internal\Struct\StructSignature\Parameter;
-use Struct\Struct\StructHashUtility;
 use function array_key_exists;
 use BackedEnum;
 use DateTimeInterface;
@@ -21,6 +18,9 @@ use Struct\Exception\TransformException;
 use Struct\Struct\Enum\KeyConvert;
 use Struct\Struct\Factory\DataTypeFactory;
 use Struct\Struct\Internal\Enum\SerializeDataType;
+use Struct\Struct\Internal\Helper\FormatHelper;
+use Struct\Struct\Internal\Struct\StructSignature\Parameter;
+use Struct\Struct\StructHashUtility;
 use UnitEnum;
 
 /**

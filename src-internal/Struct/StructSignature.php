@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Internal\Struct;
 
-
-
 use Struct\Struct\Internal\Struct\StructSignature\Property;
 
 /**

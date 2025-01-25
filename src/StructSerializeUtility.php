@@ -5,15 +5,14 @@ declare(strict_types=1);
 namespace Struct\Struct;
 
 use Exception\Unexpected\UnexpectedException;
-use Struct\Struct\Internal\Utility\DeserializeUtility;
-use Struct\Struct\Internal\Utility\SerializeUtility;
 use function json_decode;
 use function json_encode;
 use JsonException;
 use LogicException;
 use Struct\Contracts\StructInterface;
 use Struct\Struct\Enum\KeyConvert;
-
+use Struct\Struct\Internal\Utility\DeserializeUtility;
+use Struct\Struct\Internal\Utility\SerializeUtility;
 
 class StructSerializeUtility
 {

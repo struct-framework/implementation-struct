@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Internal\Struct\ObjectSignature;
 
+use Struct\Struct\Internal\Struct\ObjectSignature\Parts\Attribute;
 use Struct\Struct\Internal\Struct\ObjectSignature\Parts\IntersectionType;
 use Struct\Struct\Internal\Struct\ObjectSignature\Parts\NamedType;
-use Struct\Struct\Internal\Struct\ObjectSignature\Parts\Attribute;
+
 /**
  * @internal
  */
