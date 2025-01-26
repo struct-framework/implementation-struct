@@ -7,10 +7,12 @@ namespace Struct\Struct\Internal\Utility;
 use Struct\Attribute\ArrayKeyList;
 use Struct\Attribute\ArrayList;
 use Struct\Contracts\DataTypeInterface;
+use Struct\Struct\Internal\Enum\StructDataType;
 use Struct\Struct\Internal\Struct\ObjectSignature;
 use Struct\Struct\Internal\Struct\ObjectSignature\Parameter;
 use Struct\Struct\Internal\Struct\ObjectSignature\Parts\NamedType;
 use Struct\Struct\ReflectionUtility;
+use Struct\TestData\Fixtures\Struct\DataType;
 use function array_key_exists;
 use BackedEnum;
 use DateTimeInterface;
@@ -23,7 +25,6 @@ use Struct\Contracts\StructInterface;
 use Struct\Exception\TransformException;
 use Struct\Struct\Enum\KeyConvert;
 use Struct\Struct\Factory\DataTypeFactory;
-use Struct\Struct\Internal\Enum\SerializeDataType;
 use Struct\Struct\Internal\Helper\FormatHelper;
 use UnitEnum;
 
@@ -38,9 +39,13 @@ class DeserializeUtility
      * @param class-string<T> $type
      * @return T
      */
-    public function deserialize(array|object $data, string $dataType, ?KeyConvert $keyConvert): StructInterface
+    public function deserialize(array|object $data, string $structName, ?KeyConvert $keyConvert): StructInterface
     {
-        $type = new NamedType($dataType, false);
+        if(is_a($structName, StructInterface::class, true) === false) {
+            throw new LogicException('The type: '. $structName. ' must implement <'.StructInterface::class.'>', 1737885869);
+        }
+
+        $type = new NamedType($structName, false);
         $structure = $this->_deserializeStruct($data, $type, $keyConvert);
         return $structure;
     }
@@ -49,12 +54,12 @@ class DeserializeUtility
     {
         $dataType = $this->_findDataType($data, $type);
         $result = match ($dataType) {
-            SerializeDataType::StructureType  => $this->_deserializeStruct($data, $type, $keyConvert), // @phpstan-ignore-line
-            SerializeDataType::NullType => $this->parseNull($parameter),
-            SerializeDataType::EnumType => $this->_deserializeEnum($data, $type),
-            SerializeDataType::ArrayType => $this->_deserializeArray($data, $parameter, $keyConvert),
-            SerializeDataType::DataType => $this->_deserializeDataType($data, $parameter), // @phpstan-ignore-line
-            SerializeDataType::BuildInType, SerializeDataType::DateTime => $this->_deserializeBuildIn($data, $type, $parameter),
+            StructDataType::Struct  => $this->_deserializeStruct($data, $type, $keyConvert), // @phpstan-ignore-line
+            StructDataType::NULL => $this->parseNull($parameter),
+            StructDataType::Enum => $this->_deserializeEnum($data, $type),
+            StructDataType::Array => $this->_deserializeArray($data, $parameter, $keyConvert),
+            StructDataType::DataType => $this->_deserializeDataType($data, $parameter), // @phpstan-ignore-line
+            StructDataType::String, StructDataType::DateTime, StructDataType::Double, StructDataType::Integer, StructDataType::Boolean => $this->_deserializeBuildIn($data, $type, $parameter),
         };
         return $result;
     }
@@ -103,29 +108,38 @@ class DeserializeUtility
 
     }
 
-    protected function _findDataType(mixed $data, NamedType $type): SerializeDataType
+    protected function _findDataType(mixed $data, NamedType $type): StructDataType
     {
         if ($data === null) {
-            return SerializeDataType::NullType;
+            return StructDataType::NULL;
         }
         $dataType = $type->dataType;
         if (is_a($dataType, UnitEnum::class, true) === true) {
-            return SerializeDataType::EnumType;
+            return StructDataType::Enum;
         }
         if (is_a($dataType, DataTypeInterface::class, true) === true) {
-            return SerializeDataType::DataType;
+            return StructDataType::DataType;
         }
         if (is_a($dataType, StructInterface::class, true) === true) {
-            return SerializeDataType::StructureType;
+            return StructDataType::Struct;
         }
         if (is_a($dataType, DateTimeInterface::class, true) === true) {
-            return SerializeDataType::DateTime;
+            return StructDataType::DateTime;
         }
         if ($dataType === 'array') {
-            return SerializeDataType::ArrayType;
+            return StructDataType::Array;
         }
-        if($type->isBuiltin === true) {
-            return SerializeDataType::BuildInType;
+        if ($dataType === 'bool') {
+            return StructDataType::Boolean;
+        }
+        if ($dataType === 'string') {
+            return StructDataType::String;
+        }
+        if ($dataType === 'int') {
+            return StructDataType::Integer;
+        }
+        if ($dataType === 'float') {
+            return StructDataType::Double;
         }
         throw new LogicException('The type: '. $dataType. ' is not supported', 1737881559);
     }

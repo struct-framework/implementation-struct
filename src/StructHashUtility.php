@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Struct\Struct;
 
+use DateTimeInterface;
+use Struct\Contracts\DataTypeInterface;
+use Struct\Struct\Internal\Enum\StructDataType;
 use function array_is_list;
 use BackedEnum;
 use DateTime;
@@ -11,21 +14,15 @@ use Exception\Unexpected\UnexpectedException;
 use function gettype;
 use ReflectionClass;
 use ReflectionException;
-use Struct\Contracts\DataTypeInterfaceWritable;
-use Struct\Contracts\StructCollectionInterface;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidStructException;
 use Struct\Struct\Enum\HashAlgorithm;
-use Struct\Struct\Private\Enum\DataType;
 use UnitEnum;
 
 class StructHashUtility
 {
-    public static function buildHash(StructInterface|StructCollectionInterface $struct, HashAlgorithm $algorithm = HashAlgorithm::SHA2): string
+    public static function buildHash(StructInterface $struct, HashAlgorithm $algorithm = HashAlgorithm::SHA2): string
     {
-        if ($struct instanceof StructCollectionInterface) {
-            return self::buildHashFromStructCollection($struct, $algorithm);
-        }
         return self::buildHashFromStruct($struct, $algorithm);
     }
 
@@ -44,31 +41,20 @@ class StructHashUtility
         return $hash;
     }
 
-    protected static function buildHashFromStructCollection(StructCollectionInterface $structCollection, HashAlgorithm $algorithm): string
-    {
-        $data = hash($algorithm->value, $structCollection::class, true);
-        foreach ($structCollection as $struct) {
-            $data .= self::buildHashFromStruct($struct, $algorithm);
-        }
-        $hash = hash($algorithm->value, $data, true);
-        return $hash;
-    }
-
     protected static function buildHashFromValue(mixed $value, HashAlgorithm $algorithm): string
     {
         $dataType = self::findDataType($value);
         $data = match ($dataType) {
-            DataType::NULL             => '4237d4b9-00b6-4ebd-b482-e77551cd1620',
-            DataType::Struct           => self::buildHashFromStruct($value, $algorithm), // @phpstan-ignore-line
-            DataType::StructCollection => self::buildHashFromStructCollection($value, $algorithm), // @phpstan-ignore-line
-            DataType::DateTime         => self::buildHashFromDateTime($value, $algorithm), // @phpstan-ignore-line
-            DataType::Enum             => self::buildHashFromEnum($value, $algorithm), // @phpstan-ignore-line
-            DataType::DataType         => self::buildHashFromDataType($value, $algorithm), // @phpstan-ignore-line
-            DataType::Array            => self::buildHashFromArray($value, $algorithm), // @phpstan-ignore-line
-            DataType::Boolean,
-            DataType::Integer,
-            DataType::Double,
-            DataType::String           => self::buildHashFromDefault($value, $algorithm), // @phpstan-ignore-line
+            StructDataType::NULL             => '4237d4b9-00b6-4ebd-b482-e77551cd1620',
+            StructDataType::Struct           => self::buildHashFromStruct($value, $algorithm), // @phpstan-ignore-line
+            StructDataType::DateTime         => self::buildHashFromDateTime($value, $algorithm), // @phpstan-ignore-line
+            StructDataType::Enum             => self::buildHashFromEnum($value, $algorithm), // @phpstan-ignore-line
+            StructDataType::DataType         => self::buildHashFromDataType($value, $algorithm), // @phpstan-ignore-line
+            StructDataType::Array            => self::buildHashFromArray($value, $algorithm), // @phpstan-ignore-line
+            StructDataType::Boolean,
+            StructDataType::Integer,
+            StructDataType::Double,
+            StructDataType::String           => self::buildHashFromDefault($value, $algorithm), // @phpstan-ignore-line
         };
         $hash = hash($algorithm->value, $dataType->value . $data, true);
         return $hash;
@@ -81,7 +67,7 @@ class StructHashUtility
         return $hash;
     }
 
-    protected static function buildHashFromDataType(DataTypeInterfaceWritable $value, HashAlgorithm $algorithm): string
+    protected static function buildHashFromDataType(DataTypeInterface $value, HashAlgorithm $algorithm): string
     {
         $data = hash($algorithm->value, $value::class, true);
         $data .= $value->serializeToString();
@@ -150,41 +136,38 @@ class StructHashUtility
         return $propertyNames;
     }
 
-    protected static function findDataType(mixed $value): DataType
+    protected static function findDataType(mixed $value): StructDataType
     {
         $type = gettype($value);
         if ($value === null) {
-            return DataType::NULL;
+            return StructDataType::NULL;
         }
         if ($value instanceof StructInterface) {
-            return DataType::Struct;
+            return StructDataType::Struct;
         }
-        if ($value instanceof StructCollectionInterface) {
-            return DataType::StructCollection;
-        }
-        if ($value instanceof DateTime) {
-            return DataType::DateTime;
+        if ($value instanceof DateTimeInterface) {
+            return StructDataType::DateTime;
         }
         if ($value instanceof UnitEnum) {
-            return DataType::Enum;
+            return StructDataType::Enum;
         }
-        if ($value instanceof DataTypeInterfaceWritable) {
-            return DataType::DataType;
+        if ($value instanceof DataTypeInterface) {
+            return StructDataType::DataType;
         }
         if ($type === 'array') {
-            return DataType::Array;
+            return StructDataType::Array;
         }
         if ($type === 'boolean') {
-            return DataType::Boolean;
+            return StructDataType::Boolean;
         }
         if ($type === 'integer') {
-            return DataType::Integer;
+            return StructDataType::Integer;
         }
         if ($type === 'double') {
-            return DataType::Double;
+            return StructDataType::Double;
         }
         if ($type === 'string') {
-            return DataType::String;
+            return StructDataType::String;
         }
         throw new UnexpectedException(1701724351);
     }
