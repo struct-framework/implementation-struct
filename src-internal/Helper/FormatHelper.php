@@ -8,10 +8,10 @@ use BackedEnum;
 use DateTime;
 use DateTimeInterface;
 use Exception;
-use Struct\Struct\Internal\Struct\ObjectSignature\Parts\NamedType;
 use function gettype;
 use function is_string;
 use Struct\Exception\TransformException;
+use Struct\Struct\Internal\Struct\ObjectSignature\Parts\NamedType;
 use UnitEnum;
 
 /**

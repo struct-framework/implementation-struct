@@ -4,15 +4,6 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Internal\Utility;
 
-use Struct\Attribute\ArrayKeyList;
-use Struct\Attribute\ArrayList;
-use Struct\Contracts\DataTypeInterface;
-use Struct\Struct\Internal\Enum\StructDataType;
-use Struct\Struct\Internal\Struct\ObjectSignature;
-use Struct\Struct\Internal\Struct\ObjectSignature\Parameter;
-use Struct\Struct\Internal\Struct\ObjectSignature\Parts\NamedType;
-use Struct\Struct\ReflectionUtility;
-use Struct\TestData\Fixtures\Struct\DataType;
 use function array_key_exists;
 use BackedEnum;
 use DateTimeInterface;
@@ -21,11 +12,19 @@ use function is_array;
 use function is_object;
 use LogicException;
 use Stringable;
+use Struct\Attribute\ArrayKeyList;
+use Struct\Attribute\ArrayList;
+use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\TransformException;
 use Struct\Struct\Enum\KeyConvert;
 use Struct\Struct\Factory\DataTypeFactory;
+use Struct\Struct\Internal\Enum\StructDataType;
 use Struct\Struct\Internal\Helper\FormatHelper;
+use Struct\Struct\Internal\Struct\ObjectSignature;
+use Struct\Struct\Internal\Struct\ObjectSignature\Parameter;
+use Struct\Struct\Internal\Struct\ObjectSignature\Parts\NamedType;
+use Struct\Struct\ReflectionUtility;
 use UnitEnum;
 
 /**
@@ -41,8 +40,8 @@ class DeserializeUtility
      */
     public function deserialize(array|object $data, string $structName, ?KeyConvert $keyConvert): StructInterface
     {
-        if(is_a($structName, StructInterface::class, true) === false) {
-            throw new LogicException('The type: '. $structName. ' must implement <'.StructInterface::class.'>', 1737885869);
+        if (is_a($structName, StructInterface::class, true) === false) {
+            throw new LogicException('The type: ' . $structName . ' must implement <' . StructInterface::class . '>', 1737885869);
         }
 
         $type = new NamedType($structName, false);
@@ -92,11 +91,10 @@ class DeserializeUtility
         return $struct;
     }
 
-
     protected function _buildStruct(ObjectSignature $structSignature, array $values): StructInterface
     {
         $structName = $structSignature->objectName;
-        if($structSignature->isReadOnly === true) {
+        if ($structSignature->isReadOnly === true) {
             $struct = new $structName(...$values);
             return $struct;
         }
@@ -105,7 +103,6 @@ class DeserializeUtility
             $structure->$propertyName = $value;  // @phpstan-ignore-line
         }
         return $structure;
-
     }
 
     protected function _findDataType(mixed $data, NamedType $type): StructDataType
@@ -141,7 +138,7 @@ class DeserializeUtility
         if ($dataType === 'float') {
             return StructDataType::Double;
         }
-        throw new LogicException('The type: '. $dataType. ' is not supported', 1737881559);
+        throw new LogicException('The type: ' . $dataType . ' is not supported', 1737881559);
     }
 
     protected function _deserializeEnum(mixed $data, NamedType $type): UnitEnum
@@ -206,16 +203,15 @@ class DeserializeUtility
 
     protected function _readMostMatchingType(Parameter $parameter): NamedType
     {
-        if(count($parameter->types) === 0) {
+        if (count($parameter->types) === 0) {
             throw new LogicException('The parameter <' . $parameter->name . '> must have at least one type', 1737881057);
         }
         $firstType = $parameter->types[0];
-        if($firstType instanceof NamedType === false) {
+        if ($firstType instanceof NamedType === false) {
             throw new LogicException('The parameter <' . $parameter->name . '> must have intersection type', 1737881126);
         }
         return $firstType;
     }
-
 
     /**
      * @return array<mixed>
@@ -243,16 +239,16 @@ class DeserializeUtility
         $arguments = null;
 
         foreach ($parameter->attributes as $attribute) {
-            if($attribute->name === ArrayKeyList::class) {
+            if ($attribute->name === ArrayKeyList::class) {
                 $isArrayKeyList = true;
                 $arguments = $attribute->arguments;
             }
-            if($attribute->name === ArrayList::class) {
+            if ($attribute->name === ArrayList::class) {
                 $isArrayKeyList = true;
                 $arguments = $attribute->arguments;
             }
         }
-        if($arguments === null || count($arguments) === 0) {
+        if ($arguments === null || count($arguments) === 0) {
             throw new LogicException('The array arguments must have an type', 1737883497);
         }
         $valueType = $arguments[0];

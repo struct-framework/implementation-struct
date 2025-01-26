@@ -158,7 +158,6 @@ class ReflectionUtility
             }
         }
 
-
         $attributes = self::buildAttributes($reflectionPropertyOrParameter);
 
         $parameter = new Parameter(

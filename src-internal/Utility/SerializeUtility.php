@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Internal\Utility;
 
-use Struct\Contracts\DataTypeInterface;
 use function array_is_list;
 use DateTimeInterface;
 use Exception\Unexpected\UnexpectedException;
@@ -12,9 +11,10 @@ use function gettype;
 use function is_a;
 use function is_array;
 use function is_object;
-
 use ReflectionClass;
+
 use ReflectionException;
+use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidStructException;
 use Struct\Exception\SerializeException;

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Struct\Struct\Factory;
 
 use DateTimeInterface;
-use Struct\Contracts\DataTypeInterface;
 use function is_a;
 use Struct\Attribute\DefaultValue;
+use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidStructException;
 use Struct\Struct\Internal\Placeholder\Undefined;

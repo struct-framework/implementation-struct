@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace Struct\Struct;
 
-use DateTimeInterface;
-use Struct\Contracts\DataTypeInterface;
-use Struct\Struct\Internal\Enum\StructDataType;
 use function array_is_list;
 use BackedEnum;
 use DateTime;
+use DateTimeInterface;
 use Exception\Unexpected\UnexpectedException;
 use function gettype;
 use ReflectionClass;
 use ReflectionException;
+use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidStructException;
 use Struct\Struct\Enum\HashAlgorithm;
+use Struct\Struct\Internal\Enum\StructDataType;
 use UnitEnum;
 
 class StructHashUtility

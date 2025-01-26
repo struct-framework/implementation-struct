@@ -11,7 +11,7 @@ readonly class NamedType
 {
     public function __construct(
         public string $dataType,
-        public bool   $isBuiltin,
+        public bool $isBuiltin,
     ) {
     }
 }
