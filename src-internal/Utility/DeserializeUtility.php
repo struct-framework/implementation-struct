@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Internal\Utility;
 
+use Struct\Attribute\ArrayKeyList;
+use Struct\Attribute\ArrayList;
+use Struct\Contracts\DataTypeInterface;
+use Struct\Struct\Internal\Struct\ObjectSignature;
+use Struct\Struct\Internal\Struct\ObjectSignature\Parameter;
+use Struct\Struct\Internal\Struct\ObjectSignature\Parts\NamedType;
+use Struct\Struct\ReflectionUtility;
 use function array_key_exists;
 use BackedEnum;
 use DateTimeInterface;
@@ -12,15 +19,12 @@ use function is_array;
 use function is_object;
 use LogicException;
 use Stringable;
-use Struct\Contracts\DataTypeInterfaceWritable;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\TransformException;
 use Struct\Struct\Enum\KeyConvert;
 use Struct\Struct\Factory\DataTypeFactory;
 use Struct\Struct\Internal\Enum\SerializeDataType;
 use Struct\Struct\Internal\Helper\FormatHelper;
-use Struct\Struct\Internal\Struct\StructSignature\Parameter;
-use Struct\Struct\StructHashUtility;
 use UnitEnum;
 
 /**
@@ -34,22 +38,23 @@ class DeserializeUtility
      * @param class-string<T> $type
      * @return T
      */
-    public function deserialize(array|object $data, string $type, ?KeyConvert $keyConvert): StructInterface
+    public function deserialize(array|object $data, string $dataType, ?KeyConvert $keyConvert): StructInterface
     {
-        $structure = $this->_deserializeStructure($data, $type, $keyConvert);
+        $type = new NamedType($dataType, false);
+        $structure = $this->_deserializeStruct($data, $type, $keyConvert);
         return $structure;
     }
 
-    protected function _deserialize(mixed $data, string $type, Parameter $parameter, ?KeyConvert $keyConvert): mixed
+    protected function _deserialize(mixed $data, NamedType $type, Parameter $parameter, ?KeyConvert $keyConvert): mixed
     {
         $dataType = $this->_findDataType($data, $type);
         $result = match ($dataType) {
-            SerializeDataType::StructureType  => $this->_deserializeStructure($data, $type, $keyConvert), // @phpstan-ignore-line
+            SerializeDataType::StructureType  => $this->_deserializeStruct($data, $type, $keyConvert), // @phpstan-ignore-line
             SerializeDataType::NullType => $this->parseNull($parameter),
             SerializeDataType::EnumType => $this->_deserializeEnum($data, $type),
             SerializeDataType::ArrayType => $this->_deserializeArray($data, $parameter, $keyConvert),
             SerializeDataType::DataType => $this->_deserializeDataType($data, $parameter), // @phpstan-ignore-line
-            SerializeDataType::BuildInType => $this->_deserializeBuildIn($data, $type, $parameter),
+            SerializeDataType::BuildInType, SerializeDataType::DateTime => $this->_deserializeBuildIn($data, $type, $parameter),
         };
         return $result;
     }
@@ -59,10 +64,10 @@ class DeserializeUtility
      * @param class-string<T> $type
      * @return T
      */
-    protected function _deserializeStructure(mixed $data, string $type, ?KeyConvert $keyConvert): StructInterface
+    protected function _deserializeStruct(mixed $data, NamedType $type, ?KeyConvert $keyConvert): StructInterface
     {
         $dataArray = $this->_transformObjectToArray($data);
-        $structSignature = StructHashUtility::generateStructSignature($type);
+        $structSignature = ReflectionUtility::readObjectSignature($type->dataType);
         $properties = $structSignature->properties;
 
         $values = [];
@@ -74,46 +79,65 @@ class DeserializeUtility
             if (array_key_exists($arrayKey, $dataArray) === true) {
                 $value = $dataArray[$arrayKey];
             }
-            $values[$propertyName] = $this->_deserialize($value, $parameter->type, $parameter, $keyConvert);
+            $mostMatchingType = $this->_readMostMatchingType($parameter);
+            $values[$propertyName] = $this->_deserialize($value, $mostMatchingType, $parameter, $keyConvert);
         }
-        $structure = new $type();
+
+        $struct = $this->_buildStruct($structSignature, $values);
+        return $struct;
+    }
+
+
+    protected function _buildStruct(ObjectSignature $structSignature, array $values): StructInterface
+    {
+        $structName = $structSignature->objectName;
+        if($structSignature->isReadOnly === true) {
+            $struct = new $structName(...$values);
+            return $struct;
+        }
+        $structure = new $structName();
         foreach ($values as $propertyName => $value) {
             $structure->$propertyName = $value;  // @phpstan-ignore-line
         }
         return $structure;
+
     }
 
-    protected function _findDataType(mixed $data, string $type): SerializeDataType
+    protected function _findDataType(mixed $data, NamedType $type): SerializeDataType
     {
         if ($data === null) {
             return SerializeDataType::NullType;
         }
-        if (is_a($type, UnitEnum::class, true) === true) {
+        $dataType = $type->dataType;
+        if (is_a($dataType, UnitEnum::class, true) === true) {
             return SerializeDataType::EnumType;
         }
-        if (is_a($type, DataTypeInterfaceWritable::class, true) === true) {
+        if (is_a($dataType, DataTypeInterface::class, true) === true) {
             return SerializeDataType::DataType;
         }
-        if (is_a($type, StructInterface::class, true) === true) {
+        if (is_a($dataType, StructInterface::class, true) === true) {
             return SerializeDataType::StructureType;
         }
-        if (is_a($type, StructCollectionInterface::class, true) === true) {
-            return SerializeDataType::StructCollection;
+        if (is_a($dataType, DateTimeInterface::class, true) === true) {
+            return SerializeDataType::DateTime;
         }
-        if ($type === 'array') {
+        if ($dataType === 'array') {
             return SerializeDataType::ArrayType;
         }
-        return SerializeDataType::BuildInType;
+        if($type->isBuiltin === true) {
+            return SerializeDataType::BuildInType;
+        }
+        throw new LogicException('The type: '. $dataType. ' is not supported', 1737881559);
     }
 
-    protected function _deserializeEnum(mixed $data, string $type): UnitEnum
+    protected function _deserializeEnum(mixed $data, NamedType $type): UnitEnum
     {
         if (is_string($data) === false && is_int($data) === false) {
             throw new LogicException('The value for <' . $data . '> must be string or int', 1652900283);
         }
 
-        if (is_a($type, BackedEnum::class, true) === true) {
-            $enum = $type::tryFrom($data);
+        if (is_a($type->dataType, BackedEnum::class, true) === true) {
+            $enum = $type->dataType::tryFrom($data);
             if ($enum === null) {
                 throw new LogicException('The value <' . $data . '> is not allowed for Enum <' . $type . '>', 1652900286);
             }
@@ -158,14 +182,26 @@ class DeserializeUtility
         throw new UnexpectedException(1676979096);
     }
 
-    protected function _deserializeDataType(string|Stringable $serializedData, Parameter $parameter): DataTypeInterfaceWritable
+    protected function _deserializeDataType(string|Stringable $serializedData, Parameter $parameter): DataTypeInterface
     {
         $serializedData = (string) $serializedData;
-        /** @var class-string<DataTypeInterfaceWritable> $type */
-        $type = $parameter->type;
-        $dataType = DataTypeFactory::create($type, $serializedData);
+        $type = $this->_readMostMatchingType($parameter);
+        $dataType = DataTypeFactory::create($type->dataType, $serializedData);
         return $dataType;
     }
+
+    protected function _readMostMatchingType(Parameter $parameter): NamedType
+    {
+        if(count($parameter->types) === 0) {
+            throw new LogicException('The parameter <' . $parameter->name . '> must have at least one type', 1737881057);
+        }
+        $firstType = $parameter->types[0];
+        if($firstType instanceof NamedType === false) {
+            throw new LogicException('The parameter <' . $parameter->name . '> must have intersection type', 1737881126);
+        }
+        return $firstType;
+    }
+
 
     /**
      * @return array<mixed>
@@ -179,23 +215,50 @@ class DeserializeUtility
         if ($parameter->type === 'mixed') {
             return $dataArray;
         }
-        /** @var string $type */
-        $type = $parameter->arrayType;
-        $isArrayKeyList = $parameter->isArrayKeyList;
+
+        $arrayType = $this->_findArrayType($parameter);
+        $type = $arrayType[0];
+        $isArrayKeyList = $arrayType[1];
         $parsedOutput = $this->_buildArray($dataArray, $parameter, $type, $isArrayKeyList, $keyConvert);
         return $parsedOutput;
+    }
+
+    protected function _findArrayType(Parameter $parameter): array
+    {
+        $isArrayKeyList = false;
+        $arguments = null;
+
+        foreach ($parameter->attributes as $attribute) {
+            if($attribute->name === ArrayKeyList::class) {
+                $isArrayKeyList = true;
+                $arguments = $attribute->arguments;
+            }
+            if($attribute->name === ArrayList::class) {
+                $isArrayKeyList = true;
+                $arguments = $attribute->arguments;
+            }
+        }
+        if($arguments === null || count($arguments) === 0) {
+            throw new LogicException('The array arguments must have an type', 1737883497);
+        }
+        $valueType = $arguments[0];
+        $type = new NamedType($valueType, true);
+        return [
+            $type,
+            $isArrayKeyList,
+        ];
     }
 
     /**
      * @param array<mixed> $dataArray
      * @return array<mixed>
      */
-    protected function _buildArray(array $dataArray, Parameter $parameter, string $type, bool $isArrayKeyList, ?KeyConvert $keyConvert): array
+    protected function _buildArray(array $dataArray, Parameter $parameter, NamedType $type, bool $isArrayKeyList, ?KeyConvert $keyConvert): array
     {
         $parsedOutput = [];
         foreach ($dataArray as $key => $value) {
             $valueToSet = $value;
-            if ($type !== 'mixed') {
+            if ($type->dataType !== 'mixed') {
                 $valueToSet = $this->_deserialize($value, $type, $parameter, $keyConvert);
             }
             if ($isArrayKeyList === true) {
@@ -207,7 +270,7 @@ class DeserializeUtility
         return $parsedOutput;
     }
 
-    protected function _deserializeBuildIn(mixed $value, string $type, Parameter $parameter): mixed
+    protected function _deserializeBuildIn(mixed $value, NamedType $type, Parameter $parameter): mixed
     {
         try {
             return FormatHelper::formatBuildIn($value, $type);

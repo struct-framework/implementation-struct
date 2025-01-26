@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Struct\Struct\Factory;
 
 use DateTimeInterface;
+use Struct\Contracts\DataTypeInterface;
 use function is_a;
 use Struct\Attribute\DefaultValue;
-use Struct\Contracts\DataTypeInterfaceWritable;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidStructException;
 use Struct\Struct\Internal\Placeholder\Undefined;
@@ -49,13 +49,13 @@ class StructFactory
         }
         /** @var NamedType $type */
         $type = $parameter->types[0];
-        $typeString = $type->type;
+        $typeString = $type->dataType;
 
         if ($typeString === 'array') {
             return [];
         }
         if (is_a($typeString, StructInterface::class, true) === true) {
-            return self::create($type->type);
+            return self::create($type->dataType);
         }
 
         $defaultValue = self::readDefaultValue($parameter, $typeString);
@@ -67,7 +67,7 @@ class StructFactory
             is_a($typeString, DateTimeInterface::class, true) === true ||
             is_a($typeString, DataTypeInterfaceWritable::class, true) === true
         ) {
-            return self::create($type->type);
+            return self::create($type->dataType);
         }
         if (
             $typeString === 'string' ||
@@ -75,13 +75,13 @@ class StructFactory
             $typeString === 'float' ||
             $typeString === 'bool' ||
             is_a($typeString, DateTimeInterface::class, true) === true ||
-            is_a($typeString, DataTypeInterfaceWritable::class, true) === true ||
+            is_a($typeString, DataTypeInterface::class, true) === true ||
             is_a($typeString, UnitEnum::class, true) === true
         ) {
             $undefined = new Undefined();
             return $undefined;
         }
-        throw new InvalidStructException('The type <' . $type->type . '> is not supported', 1675967989);
+        throw new InvalidStructException('The type <' . $type->dataType . '> is not supported', 1675967989);
     }
 
     protected static function readDefaultValue(Parameter $parameter, string $typeString): mixed
@@ -90,7 +90,7 @@ class StructFactory
         if ($defaultValue === null) {
             return null;
         }
-        if (is_a($typeString, DataTypeInterfaceWritable::class, true) === true) {
+        if (is_a($typeString, DataTypeInterface::class, true) === true) {
             $value = new $typeString($defaultValue);
             return $value;
         }

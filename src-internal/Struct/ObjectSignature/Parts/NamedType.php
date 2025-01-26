@@ -10,8 +10,8 @@ namespace Struct\Struct\Internal\Struct\ObjectSignature\Parts;
 readonly class NamedType
 {
     public function __construct(
-        public string $type,
-        public bool $isBuiltin,
+        public string $dataType,
+        public bool   $isBuiltin,
     ) {
     }
 }

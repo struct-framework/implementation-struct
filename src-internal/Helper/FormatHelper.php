@@ -8,6 +8,7 @@ use BackedEnum;
 use DateTime;
 use DateTimeInterface;
 use Exception;
+use Struct\Struct\Internal\Struct\ObjectSignature\Parts\NamedType;
 use function gettype;
 use function is_string;
 use Struct\Exception\TransformException;
@@ -31,34 +32,35 @@ class FormatHelper
         return $enum->name;
     }
 
-    public static function formatBuildIn(mixed $value, string $toType): mixed
+    public static function formatBuildIn(mixed $value, NamedType $toType): mixed
     {
+        $dataType = $toType->dataType;
         $valueType = gettype($value);
         switch ($valueType) {
             case 'string':
-                return self::parseString($value, $toType);
+                return self::parseString($value, $dataType);
             case 'boolean':
-                if ($toType === 'bool') {
+                if ($dataType === 'bool') {
                     return $value;
                 }
                 break;
             case 'integer':
-                if ($toType === 'int') {
+                if ($dataType === 'int') {
                     return $value;
                 }
-                if ($toType === 'float') {
+                if ($dataType === 'float') {
                     return (float)$value;  // @phpstan-ignore-line
                 }
                 break;
             case 'double':
-                if ($toType === 'float') {
+                if ($dataType === 'float') {
                     return $value;
                 }
                 break;
             default:
                 throw new TransformException('Can not parse type <' . $valueType . '>', 1675967897);
         }
-        throw new TransformException('Can not transform to type <' . $toType . '>', 1675967900);
+        throw new TransformException('Can not transform to type <' . $dataType . '>', 1675967900);
     }
 
     protected static function parseString(mixed $value, string $type): string|DateTimeInterface

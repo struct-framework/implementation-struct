@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Internal\Utility;
 
+use Struct\Contracts\DataTypeInterface;
 use function array_is_list;
 use DateTimeInterface;
 use Exception\Unexpected\UnexpectedException;
@@ -14,7 +15,6 @@ use function is_object;
 
 use ReflectionClass;
 use ReflectionException;
-use Struct\Contracts\DataTypeInterfaceWritable;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidStructException;
 use Struct\Exception\SerializeException;
@@ -147,7 +147,7 @@ class SerializeUtility
         if (is_a($value, StructInterface::class)) {
             return $this->_serialize($value, $keyConvert);
         }
-        if (is_a($value, DataTypeInterfaceWritable::class)) {
+        if (is_a($value, DataTypeInterface::class)) {
             try {
                 return $value->serializeToString();
             } catch (\Throwable $exception) {

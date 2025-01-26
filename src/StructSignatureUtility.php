@@ -154,7 +154,7 @@ class StructSignatureUtility
 
     protected static function _readType(Property $property): string
     {
-        $propertyType = $property->parameter->types[0]->type;
+        $propertyType = $property->parameter->types[0]->dataType;
         if ($propertyType !== 'array') {
             return $propertyType;
         }

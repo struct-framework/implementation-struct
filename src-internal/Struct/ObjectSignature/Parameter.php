@@ -20,6 +20,7 @@ readonly class Parameter
     public function __construct(
         public string $name,
         public array $types,
+        public bool $isPromoted,
         public bool $isAllowsNull,
         public bool $hasDefaultValue,
         public mixed $defaultValue,

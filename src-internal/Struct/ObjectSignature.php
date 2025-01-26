@@ -19,6 +19,9 @@ readonly class ObjectSignature
      * @param array<Method> $methods
      */
     public function __construct(
+        public string $objectName,
+        public bool $isReadOnly,
+        public bool $isFinal,
         public array $constructorArguments,
         public array $properties,
         public array $methods,

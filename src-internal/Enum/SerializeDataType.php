@@ -15,5 +15,6 @@ enum SerializeDataType: string
     case ArrayType = 'array';
     case EnumType = 'enum';
     case DataType = 'DataType';
+    case DateTime = 'DateTime';
     case BuildInType = 'default';
 }

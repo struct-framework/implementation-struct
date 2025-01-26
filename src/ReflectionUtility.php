@@ -40,11 +40,17 @@ class ReflectionUtility
         } catch (ReflectionException $exception) {
             throw new UnexpectedException(1724442032, $exception);
         }
+
+        $isReadOnly = $reflection->isReadOnly();
+        $isFinal = $reflection->isFinal();
         $constructorArguments = self::readConstructorArguments($reflection);
         $properties = self::readProperties($reflection);
         $methods = self::readMethods($reflection);
 
         $objectStruct = new ObjectSignature(
+            $objectName,
+            $isReadOnly,
+            $isFinal,
             $constructorArguments,
             $properties,
             $methods,
@@ -136,12 +142,14 @@ class ReflectionUtility
         $types = self::buildTypes($type);
         $isAllowsNull = $type->allowsNull();
         $defaultValue = null;
+        $isPromoted = false;
 
         if ($reflectionPropertyOrParameter instanceof ReflectionProperty === true) {
             $hasDefaultValue = $reflectionPropertyOrParameter->hasDefaultValue();
             if ($hasDefaultValue === true) {
                 $defaultValue = $reflectionPropertyOrParameter->getDefaultValue();
             }
+            $isPromoted = $reflectionPropertyOrParameter->isPromoted();
         }
         if ($reflectionPropertyOrParameter instanceof ReflectionParameter === true) {
             $hasDefaultValue = $reflectionPropertyOrParameter->isDefaultValueAvailable();
@@ -150,11 +158,13 @@ class ReflectionUtility
             }
         }
 
+
         $attributes = self::buildAttributes($reflectionPropertyOrParameter);
 
         $parameter = new Parameter(
             $name,
             $types,
+            $isPromoted,
             $isAllowsNull,
             $hasDefaultValue,
             $defaultValue,
