@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Struct\Struct\Factory;
 
 use DateTimeInterface;
-use function is_a;
+use ReflectionUtility;
 use Struct\Attribute\DefaultValue;
 use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidStructException;
+use Struct\Reflection\Internal\Struct\ObjectSignature\Parameter;
+use Struct\Reflection\Internal\Struct\ObjectSignature\Parts\NamedType;
 use Struct\Struct\Internal\Placeholder\Undefined;
-use Struct\Struct\Internal\Struct\ObjectSignature\Parameter;
-use Struct\Struct\Internal\Struct\ObjectSignature\Parts\NamedType;
-use Struct\Struct\ReflectionUtility;
 use UnitEnum;
+use function is_a;
 
 class StructFactory
 {

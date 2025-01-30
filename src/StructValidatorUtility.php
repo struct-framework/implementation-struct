@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace Struct\Struct;
 
+use ReflectionUtility;
 use Struct\Attribute\ArrayKeyList;
 use Struct\Attribute\ArrayList;
 use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidStructException;
-use Struct\Struct\Internal\Struct\ObjectSignature;
-use Struct\Struct\Internal\Struct\ObjectSignature\Parameter;
-use Struct\Struct\Internal\Struct\ObjectSignature\Parts\IntersectionType;
-use Struct\Struct\Internal\Struct\ObjectSignature\Parts\NamedType;
-use Struct\Struct\Internal\Struct\ObjectSignature\Parts\Visibility;
-use Struct\Struct\Internal\Struct\ObjectSignature\Property;
+use Struct\Reflection\Internal\Struct\ObjectSignature;
+use Struct\Reflection\Internal\Struct\ObjectSignature\Parameter;
+use Struct\Reflection\Internal\Struct\ObjectSignature\Parts\IntersectionType;
+use Struct\Reflection\Internal\Struct\ObjectSignature\Parts\NamedType;
+use Struct\Reflection\Internal\Struct\ObjectSignature\Parts\Visibility;
+use Struct\Reflection\Internal\Struct\ObjectSignature\Property;
 
 class StructValidatorUtility
 {
@@ -41,13 +42,13 @@ class StructValidatorUtility
         }
         $signature = ReflectionUtility::readObjectSignature($dataType);
         if ($signature->isReadOnly === false) {
-            throw new InvalidStructException('The data type <' . $dataType::class . '> must be readonly', 1737834619);
+            throw new InvalidStructException('The data type <' . $signature->objectName . '> must be readonly', 1737834619);
         }
         if ($signature->isFinal === false) {
-            throw new InvalidStructException('The data type <' . $dataType::class . '> must be final', 1737834686);
+            throw new InvalidStructException('The data type <' . $signature->objectName . '> must be final', 1737834686);
         }
         if (count($signature->constructorArguments) === 0) {
-            throw new InvalidStructException('The data type <' . $dataType::class . '> must have at least one constructor argument', 1737834794);
+            throw new InvalidStructException('The data type <' . $signature->objectName . '> must have at least one constructor argument', 1737834794);
         }
 
         $firstConstructorArgument = $signature->constructorArguments[0];
@@ -59,6 +60,9 @@ class StructValidatorUtility
     protected static function checkForTypeType(Parameter $parameter, string $typeName): bool
     {
         foreach ($parameter->types as $type) {
+            if($type instanceof IntersectionType === true) {
+                continue;
+            }
             if ($type->dataType === $typeName) {
                 return true;
             }

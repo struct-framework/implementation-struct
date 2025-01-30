@@ -5,15 +5,20 @@ declare(strict_types=1);
 namespace Struct\Struct;
 
 use Exception\Unexpected\UnexpectedException;
+use ReflectionUtility;
 use Struct\Attribute\ArrayKeyList;
 use Struct\Attribute\ArrayList;
-use Struct\Contracts\DataTypeInterfaceWritable;
+use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructInterface;
-use Struct\Struct\Internal\Struct\ObjectSignature\Property;
+use Struct\Reflection\Internal\Struct\ObjectSignature\Property;
+use Struct\Struct\Internal\Enum\StructDataType;
 
 class StructSignatureUtility
 {
+
+
     /**
+     * @param StructInterface|class-string<object> $struct
      * @return array<string>
      */
     public static function readPropertySignature(StructInterface|string $struct, bool $withType = false): array
@@ -31,13 +36,20 @@ class StructSignatureUtility
         return $propertyStrings;
     }
 
-    public static function readValueSignature(StructInterface|string $struct, bool $withType = false): array
+    /**
+     * @param StructInterface|class-string<object> $struct
+     */
+    public static function readPropertySignatureHash(StructInterface|string $struct, bool $withType = false): string
     {
-        $propertyValueStrings = [];
-        self::buildValueStruct($propertyValueStrings, $struct, '');
-        return $propertyValueStrings;
+        $propertyStrings = self::readPropertySignature($struct, $withType);
+        $hash = sha1(implode(',', $propertyStrings));
+        return $hash;
     }
 
+
+    /**
+     * @param array<string> $propertyValueStrings
+     */
     protected static function buildValues(array &$propertyValueStrings, mixed $propertyValue, string $prefix): void
     {
         if ($propertyValue instanceof StructInterface === true) {
@@ -48,18 +60,22 @@ class StructSignatureUtility
             self::buildValueArray($propertyValueStrings, $propertyValue, $prefix . '_array');
             return;
         }
-        $dataType = self::findDataType($propertyValue);
-        $data = match ($dataType) {
-            'null'              => 'null',
-            'DateTimeInterface' => self::buildValueFromDateTime($propertyValue), // @phpstan-ignore-line
-            'Enum'              => self::buildValueFromEnum($propertyValue), // @phpstan-ignore-line
-            'DataTypeInterface' => self::buildValueFromDataType($propertyValue), // @phpstan-ignore-line
-            'boolean'           => self::buildValueBoolean($propertyValue), // @phpstan-ignore-line
-            'integer',
-            'double',
-            'string'            => (string) $propertyValue, // @phpstan-ignore-line
+        $structDataType = self::findDataType($propertyValue);
+        $data = match ($structDataType) {
+            StructDataType::NULL     => 'null',
+            StructDataType::DateTime => self::buildValueFromDateTime($propertyValue), // @phpstan-ignore-line
+            StructDataType::Enum     => self::buildValueFromEnum($propertyValue), // @phpstan-ignore-line
+            StructDataType::DataType => self::buildValueFromDataType($propertyValue), // @phpstan-ignore-line
+            StructDataType::Boolean  => self::buildValueBoolean($propertyValue), // @phpstan-ignore-line
+
+            StructDataType::Integer,
+            StructDataType::Double,
+            StructDataType::String   => (string) $propertyValue, // @phpstan-ignore-line
+
+            StructDataType::Array,
+            StructDataType::Struct => throw new UnexpectedException(1737888077),
         };
-        $propertyValueStrings[] = $prefix . '_' . $dataType . ':' . self::encode($data);
+        $propertyValueStrings[] = $prefix . '_' . $structDataType->value . ':' . self::encode($data);
     }
 
     protected static function encode(string $value): string
@@ -70,6 +86,9 @@ class StructSignatureUtility
         return $value;
     }
 
+    /**
+     * @param array<string> $propertyValueStrings
+     */
     protected static function buildValueStruct(array &$propertyValueStrings, StructInterface $struct, string $prefix): void
     {
         $propertyStrings = self::readPropertySignature($struct);
@@ -79,6 +98,9 @@ class StructSignatureUtility
         }
     }
 
+    /**
+     * @param array<string> $propertyValueStrings
+     */
     protected static function buildValueArray(array &$propertyValueStrings, array $propertyValue, string $prefix): void
     {
         foreach ($propertyValue as $key => $subPropertyValue) {
@@ -94,7 +116,7 @@ class StructSignatureUtility
         return 'false';
     }
 
-    protected static function buildValueFromDataType(DataTypeInterfaceWritable $value): string
+    protected static function buildValueFromDataType(DataTypeInterface $value): string
     {
         $data = $value->serializeToString();
         return $data;
@@ -115,42 +137,37 @@ class StructSignatureUtility
         return $data;
     }
 
-    protected static function findDataType(mixed $value): string
+    protected static function findDataType(mixed $value): StructDataType
     {
         $type = gettype($value);
         if ($value === null) {
-            return 'null';
+            return StructDataType::NULL;
         }
         if ($value instanceof \DateTimeInterface) {
-            return 'DateTimeInterface';
+            return StructDataType::DateTime;
         }
         if ($value instanceof \UnitEnum) {
-            return 'Enum';
+            return StructDataType::Enum;
         }
-        if ($value instanceof DataTypeInterfaceWritable) {
-            return 'DataTypeInterface';
+        if ($value instanceof DataTypeInterface) {
+            return StructDataType::DataType;
         }
         if ($type === 'boolean') {
-            return 'boolean';
+            return StructDataType::Boolean;
         }
         if ($type === 'integer') {
-            return 'integer';
+            return StructDataType::Integer;
         }
         if ($type === 'double') {
-            return 'double';
+            return StructDataType::Double;
         }
         if ($type === 'string') {
-            return 'string';
+            return StructDataType::String;
         }
         throw new UnexpectedException(1701724351);
     }
 
-    public static function readPropertySignatureHash(StructInterface|string $struct, bool $withType = false): string
-    {
-        $propertyStrings = self::readPropertySignature($struct, $withType);
-        $hash = sha1(implode(',', $propertyStrings));
-        return $hash;
-    }
+
 
     protected static function _readType(Property $property): string
     {

@@ -4,28 +4,28 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Internal\Utility;
 
-use function array_key_exists;
 use BackedEnum;
 use DateTimeInterface;
 use Exception\Unexpected\UnexpectedException;
-use function is_array;
-use function is_object;
 use LogicException;
+use ReflectionUtility;
 use Stringable;
 use Struct\Attribute\ArrayKeyList;
 use Struct\Attribute\ArrayList;
 use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\TransformException;
+use Struct\Reflection\Internal\Struct\ObjectSignature;
+use Struct\Reflection\Internal\Struct\ObjectSignature\Parameter;
+use Struct\Reflection\Internal\Struct\ObjectSignature\Parts\NamedType;
 use Struct\Struct\Enum\KeyConvert;
 use Struct\Struct\Factory\DataTypeFactory;
 use Struct\Struct\Internal\Enum\StructDataType;
 use Struct\Struct\Internal\Helper\FormatHelper;
-use Struct\Struct\Internal\Struct\ObjectSignature;
-use Struct\Struct\Internal\Struct\ObjectSignature\Parameter;
-use Struct\Struct\Internal\Struct\ObjectSignature\Parts\NamedType;
-use Struct\Struct\ReflectionUtility;
 use UnitEnum;
+use function array_key_exists;
+use function is_array;
+use function is_object;
 
 /**
  * @internal
