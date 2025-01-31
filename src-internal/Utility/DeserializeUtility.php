@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Internal\Utility;
 
+use function array_key_exists;
 use BackedEnum;
 use DateTimeInterface;
 use Exception\Unexpected\UnexpectedException;
+use function is_array;
+use function is_object;
 use LogicException;
 use ReflectionUtility;
 use Stringable;
@@ -24,9 +27,6 @@ use Struct\Struct\Internal\Helper\FormatHelper;
 use Struct\Struct\Internal\Helper\StructDataTypeHelper;
 use Struct\Struct\Internal\Struct\StructSignature\StructBaseDataType;
 use UnitEnum;
-use function array_key_exists;
-use function is_array;
-use function is_object;
 
 /**
  * @internal

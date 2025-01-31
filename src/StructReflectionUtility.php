@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Struct\Struct;
 
-
 use Struct\Attribute\ArrayKeyList;
 use Struct\Attribute\ArrayList;
 use Struct\Attribute\ArrayPassThrough;
@@ -16,11 +15,11 @@ use Struct\Reflection\MemoryCache;
 use Struct\Reflection\ReflectionUtility;
 use Struct\Struct\Internal\Helper\StructDataTypeHelper;
 use Struct\Struct\Internal\Struct\StructSignature;
-use Struct\Struct\Internal\Struct\StructSignature\StructArrayTypeOption;
-use Struct\Struct\Internal\Struct\StructSignature\StructDataType;
-use Struct\Struct\Internal\Struct\StructSignature\StructBaseDataType;
-use Struct\Struct\Internal\Struct\StructSignature\StructElement;
 use Struct\Struct\Internal\Struct\StructSignature\StructArrayType;
+use Struct\Struct\Internal\Struct\StructSignature\StructArrayTypeOption;
+use Struct\Struct\Internal\Struct\StructSignature\StructBaseDataType;
+use Struct\Struct\Internal\Struct\StructSignature\StructDataType;
+use Struct\Struct\Internal\Struct\StructSignature\StructElement;
 use Struct\Struct\Internal\Validator\PropertyValidator;
 
 class StructReflectionUtility
@@ -35,7 +34,7 @@ class StructReflectionUtility
             $structName = $structName::class;
         }
         $cacheIdentifier = MemoryCache::buildCacheIdentifier($structName, '1936c4c4-f4fa-404c-b5e6-dfaffb60e69a');
-        if(MemoryCache::has($cacheIdentifier)) {
+        if (MemoryCache::has($cacheIdentifier)) {
             return MemoryCache::read($cacheIdentifier);
         }
         $signature = self::_readSignature($structName);
@@ -77,8 +76,8 @@ class StructReflectionUtility
     protected static function _buildElement(Property $property): StructElement
     {
         $structDataTypes = self::_buildStructDataTypesFromNamedType($property->parameter->types);
-        list($hasDefaultValue, $defaultValue) = self::_buildDefaultValue($property);;
-        $structArrayType =  self::_buildStructArrayType ($property);;
+        list($hasDefaultValue, $defaultValue) = self::_buildDefaultValue($property);
+        $structArrayType =  self::_buildStructArrayType($property);
 
         $element = new StructElement(
             $property->parameter->name,
@@ -94,7 +93,7 @@ class StructReflectionUtility
     protected static function _buildStructArrayType(Property $property): ?StructArrayType
     {
         $isArrayPassThrough = self::_findAttribute($property, ArrayPassThrough::class) === [];
-        if($isArrayPassThrough === true) {
+        if ($isArrayPassThrough === true) {
             $structArrayType = new StructArrayType(
                 StructArrayTypeOption::ArrayPassThrough,
                 [],
@@ -103,22 +102,22 @@ class StructReflectionUtility
         }
         $structArrayTypeOption = StructArrayTypeOption::ArrayList;
         $arrayListArguments = self::_findAttribute($property, ArrayList::class);
-        if($arrayListArguments === null) {
+        if ($arrayListArguments === null) {
             $arrayListArguments = self::_findAttribute($property, ArrayKeyList::class);
-            if($arrayListArguments === null) {
+            if ($arrayListArguments === null) {
                 return null;
             }
             $structArrayTypeOption = StructArrayTypeOption::ArrayKeyList;
         }
-        if(count($arrayListArguments) === 0) {
+        if (count($arrayListArguments) === 0) {
             return null;
         }
 
         $arguments = $arrayListArguments[0];
-        if(is_string($arguments) === true) {
+        if (is_string($arguments) === true) {
             $arguments = [$arguments];
         }
-        if(is_array($arguments) === false) {
+        if (is_array($arguments) === false) {
             return null;
         }
         $structDataType = self::_buildStructDataTypesFromDataType($arguments);
@@ -133,14 +132,14 @@ class StructReflectionUtility
     {
         $hasDefaultValue = $property->parameter->hasDefaultValue;
         $defaultValue = $property->parameter->defaultValue;
-        if($hasDefaultValue === true) {
+        if ($hasDefaultValue === true) {
             return [
                 true,
                 $defaultValue,
             ];
         }
         $defaultValue = self::_findDefaultValue($property);
-        if($defaultValue !== null) {
+        if ($defaultValue !== null) {
             $hasDefaultValue = true;
         }
         return [
@@ -152,7 +151,7 @@ class StructReflectionUtility
     protected static function _findDefaultValue(Property $property): ?string
     {
         $defaultValueAttributeArguments = self::_findAttribute($property, DefaultValue::class);
-        if(
+        if (
             $defaultValueAttributeArguments === null ||
             count($defaultValueAttributeArguments) === 0 ||
             is_string($defaultValueAttributeArguments[0]) === false
@@ -168,7 +167,7 @@ class StructReflectionUtility
     protected static function _findAttribute(Property $property, string $attributeName): ?array
     {
         foreach ($property->parameter->attributes as $attribute) {
-            if($attribute->name === $attributeName) {
+            if ($attribute->name === $attributeName) {
                 return $attribute->arguments;
             }
         }
@@ -197,7 +196,7 @@ class StructReflectionUtility
     {
         $structDataTypes = [];
         foreach ($dataTypes as $dataType) {
-            if(is_string($dataType) === false) {
+            if (is_string($dataType) === false) {
                 continue;
             }
             $structDataTypes[] = self::_buildStructDataType($dataType);
@@ -208,7 +207,7 @@ class StructReflectionUtility
     protected static function _buildStructDataType(string $dataType): StructDataType
     {
         $structBaseDataTypes = StructDataTypeHelper::findDataType($dataType);
-        $className = match($structBaseDataTypes) {
+        $className = match ($structBaseDataTypes) {
             StructBaseDataType::NULL,
             StructBaseDataType::Array,
             StructBaseDataType::Integer,
@@ -226,5 +225,4 @@ class StructReflectionUtility
         );
         return $structDataType;
     }
-
 }

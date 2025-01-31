@@ -15,8 +15,6 @@ use Struct\Struct\Internal\Struct\StructSignature\StructBaseDataType;
 
 class StructSignatureUtility
 {
-
-
     /**
      * @param StructInterface|class-string<object> $struct
      * @return array<string>
@@ -45,7 +43,6 @@ class StructSignatureUtility
         $hash = sha1(implode(',', $propertyStrings));
         return $hash;
     }
-
 
     /**
      * @param array<string> $propertyValueStrings
@@ -166,8 +163,6 @@ class StructSignatureUtility
         }
         throw new UnexpectedException(1701724351);
     }
-
-
 
     protected static function _readType(Property $property): string
     {

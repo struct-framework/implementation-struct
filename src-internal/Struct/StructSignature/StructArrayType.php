@@ -11,7 +11,6 @@ use Struct\Attribute\ArrayList;
  */
 readonly class StructArrayType
 {
-
     /**
      * @param array<StructDataType> $structDataTypes
      */

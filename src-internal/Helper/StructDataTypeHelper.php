@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Internal\Helper;
 
-
 use LogicException;
 use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructInterface;
@@ -18,9 +17,8 @@ class StructDataTypeHelper
 {
     public static function findDataType(string|NamedType $dataTyperOrNamedType): StructBaseDataType
     {
-
         $dataType = $dataTyperOrNamedType;
-        if($dataTyperOrNamedType instanceof NamedType) {
+        if ($dataTyperOrNamedType instanceof NamedType) {
             $dataType = $dataTyperOrNamedType->dataType;
         }
         if (is_a($dataType, \UnitEnum::class, true) === true) {

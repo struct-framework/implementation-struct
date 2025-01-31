@@ -60,7 +60,7 @@ class StructValidatorUtility
     protected static function checkForTypeType(Parameter $parameter, string $typeName): bool
     {
         foreach ($parameter->types as $type) {
-            if($type instanceof IntersectionType === true) {
+            if ($type instanceof IntersectionType === true) {
                 continue;
             }
             if ($type->dataType === $typeName) {

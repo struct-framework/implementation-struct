@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Struct\Struct;
 
+use function array_is_list;
 use BackedEnum;
 use DateTime;
 use DateTimeInterface;
 use Exception\Unexpected\UnexpectedException;
+use function gettype;
 use ReflectionClass;
 use ReflectionException;
 use Struct\Contracts\DataTypeInterface;
@@ -16,8 +18,6 @@ use Struct\Exception\InvalidStructException;
 use Struct\Struct\Enum\HashAlgorithm;
 use Struct\Struct\Internal\Struct\StructSignature\StructBaseDataType;
 use UnitEnum;
-use function array_is_list;
-use function gettype;
 
 class StructHashUtility
 {

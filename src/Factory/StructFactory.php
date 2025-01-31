@@ -31,7 +31,7 @@ class StructFactory
         } catch (InvalidValueException $invalidValueException) {
             throw new InvalidValueException($invalidValueException, '<' . $structName . '>');
         }
-        if($structSignature->isReadOnly === true) {
+        if ($structSignature->isReadOnly === true) {
             $struct = new $structName(...$values);
         } else {
             $struct = new $structName();
@@ -59,8 +59,6 @@ class StructFactory
         }
     }
 
-
-
     protected static function _createValues(StructSignature $structSignature): array
     {
         $values = [];
@@ -74,7 +72,6 @@ class StructFactory
         }
         return $values;
     }
-
 
     protected static function buildValue(StructElement $structElement): mixed
     {
@@ -94,10 +91,9 @@ class StructFactory
         return $value;
     }
 
-
     protected static function _buildValueArray(StructElement $structElement): null|array
     {
-        if($structElement->isAllowsNull === true) {
+        if ($structElement->isAllowsNull === true) {
             return null;
         }
         return [];
@@ -106,13 +102,13 @@ class StructFactory
     protected static function _buildValueDataType(StructElement $structElement): null|string|DataTypeInterface
     {
         $className = $structElement->structDataTypes[0]->className;
-        if($structElement->hasDefaultValue === true) {
-            if(is_string($structElement->defaultValue) === true) {
+        if ($structElement->hasDefaultValue === true) {
+            if (is_string($structElement->defaultValue) === true) {
                 return DataTypeFactory::create($className, (string) $structElement->defaultValue);
             }
             return $structElement->defaultValue;
         }
-        if($structElement->isAllowsNull === true) {
+        if ($structElement->isAllowsNull === true) {
             return null;
         }
         return self::NO_VALUE;
@@ -126,10 +122,10 @@ class StructFactory
 
     protected static function _buildValueDefault(StructElement $structElement): null|bool|int|float|string|UnitEnum
     {
-        if($structElement->hasDefaultValue === true) {
+        if ($structElement->hasDefaultValue === true) {
             return $structElement->defaultValue;
         }
-        if($structElement->isAllowsNull === true) {
+        if ($structElement->isAllowsNull === true) {
             return null;
         }
         return self::NO_VALUE;
@@ -137,17 +133,12 @@ class StructFactory
 
     protected static function _buildValueDateTime(StructElement $structElement): null|\DateTimeInterface
     {
-        if($structElement->hasDefaultValue === true) {
+        if ($structElement->hasDefaultValue === true) {
             return new \DateTimeImmutable($structElement->defaultValue);
         }
-        if($structElement->isAllowsNull === true) {
+        if ($structElement->isAllowsNull === true) {
             return null;
         }
         return new \DateTimeImmutable('1900-01-01 00:00:00', new \DateTimeZone('UTC'));
     }
-
-
-
-
-
 }
