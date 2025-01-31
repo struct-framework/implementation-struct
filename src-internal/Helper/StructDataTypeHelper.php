@@ -46,8 +46,10 @@ class StructDataTypeHelper
             return StructBaseDataType::Integer;
         }
         if ($dataType === 'float') {
-            return StructBaseDataType::Double;
+            return StructBaseDataType::Float;
         }
         throw new LogicException('The type: ' . $dataType . ' is not supported', 1738258655);
     }
+
+
 }

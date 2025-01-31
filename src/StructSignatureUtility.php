@@ -66,7 +66,7 @@ class StructSignatureUtility
             StructBaseDataType::Boolean  => self::buildValueBoolean($propertyValue), // @phpstan-ignore-line
 
             StructBaseDataType::Integer,
-            StructBaseDataType::Double,
+            StructBaseDataType::Float,
             StructBaseDataType::String   => (string) $propertyValue, // @phpstan-ignore-line
 
             StructBaseDataType::Array,
@@ -156,7 +156,7 @@ class StructSignatureUtility
             return StructBaseDataType::Integer;
         }
         if ($type === 'double') {
-            return StructBaseDataType::Double;
+            return StructBaseDataType::Float;
         }
         if ($type === 'string') {
             return StructBaseDataType::String;

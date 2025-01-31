@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Struct\Struct;
 
 use Exception\Unexpected\UnexpectedException;
+use Struct\Struct\Factory\StructFactory;
 use function json_decode;
 use function json_encode;
 use JsonException;
 use LogicException;
 use Struct\Contracts\StructInterface;
 use Struct\Struct\Enum\KeyConvert;
-use Struct\Struct\Internal\Utility\DeserializeUtility;
 use Struct\Struct\Internal\Utility\SerializeUtility;
 
 class StructSerializeUtility
@@ -33,8 +33,8 @@ class StructSerializeUtility
      */
     public static function deserialize(object|array $data, string $type, ?KeyConvert $keyConvert = null): StructInterface
     {
-        $unSerializeUtility = new DeserializeUtility();
-        return $unSerializeUtility->deserialize($data, $type, $keyConvert);
+        $struct = StructFactory::create($type, $data);
+        return $struct;
     }
 
     public static function serializeToJson(StructInterface $structure, ?KeyConvert $keyConvert = null): string

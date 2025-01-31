@@ -45,7 +45,6 @@ class StructHashUtility
     {
         $dataType = self::findDataType($value);
         $data = match ($dataType) {
-            StructBaseDataType::NULL             => '4237d4b9-00b6-4ebd-b482-e77551cd1620',
             StructBaseDataType::Struct           => self::buildHashFromStruct($value, $algorithm), // @phpstan-ignore-line
             StructBaseDataType::DateTime         => self::buildHashFromDateTime($value, $algorithm), // @phpstan-ignore-line
             StructBaseDataType::Enum             => self::buildHashFromEnum($value, $algorithm), // @phpstan-ignore-line
@@ -53,7 +52,7 @@ class StructHashUtility
             StructBaseDataType::Array            => self::buildHashFromArray($value, $algorithm), // @phpstan-ignore-line
             StructBaseDataType::Boolean,
             StructBaseDataType::Integer,
-            StructBaseDataType::Double,
+            StructBaseDataType::Float,
             StructBaseDataType::String           => self::buildHashFromDefault($value, $algorithm), // @phpstan-ignore-line
         };
         $hash = hash($algorithm->value, $dataType->value . $data, true);
@@ -139,9 +138,6 @@ class StructHashUtility
     protected static function findDataType(mixed $value): StructBaseDataType
     {
         $type = gettype($value);
-        if ($value === null) {
-            return StructBaseDataType::NULL;
-        }
         if ($value instanceof StructInterface) {
             return StructBaseDataType::Struct;
         }
@@ -164,7 +160,7 @@ class StructHashUtility
             return StructBaseDataType::Integer;
         }
         if ($type === 'double') {
-            return StructBaseDataType::Double;
+            return StructBaseDataType::Float;
         }
         if ($type === 'string') {
             return StructBaseDataType::String;

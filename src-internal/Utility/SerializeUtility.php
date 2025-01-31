@@ -78,7 +78,7 @@ class SerializeUtility
         foreach ($reflectionProperties as $reflectionProperty) {
             $propertyName = $reflectionProperty->getName();
             if ($reflectionProperty->isPublic() === false) {
-                throw new InvalidStructException('The property <' . $propertyName . '> must be public', 1651559697);
+                throw new InvalidStructException(1738341233, 'The property <' . $propertyName . '> must be public');
             }
             $propertyNames[] = $propertyName;
         }

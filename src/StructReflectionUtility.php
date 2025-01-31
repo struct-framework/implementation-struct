@@ -11,6 +11,7 @@ use Struct\Attribute\DefaultValue;
 use Struct\Contracts\StructInterface;
 use Struct\Reflection\Internal\Struct\ObjectSignature\Parts\NamedType;
 use Struct\Reflection\Internal\Struct\ObjectSignature\Property;
+use Struct\Reflection\Internal\Struct\ObjectSignature\Value;
 use Struct\Reflection\MemoryCache;
 use Struct\Reflection\ReflectionUtility;
 use Struct\Struct\Internal\Helper\StructDataTypeHelper;
@@ -20,6 +21,8 @@ use Struct\Struct\Internal\Struct\StructSignature\StructArrayTypeOption;
 use Struct\Struct\Internal\Struct\StructSignature\StructBaseDataType;
 use Struct\Struct\Internal\Struct\StructSignature\StructDataType;
 use Struct\Struct\Internal\Struct\StructSignature\StructElement;
+use Struct\Struct\Internal\Utility\StructValidatorUtility;
+use Struct\Struct\Internal\Utility\ValueUtility;
 use Struct\Struct\Internal\Validator\PropertyValidator;
 
 class StructReflectionUtility
@@ -48,6 +51,7 @@ class StructReflectionUtility
     protected static function _readSignature(string $structName): StructSignature
     {
         $objectSignature = ReflectionUtility::readSignature($structName);
+        StructValidatorUtility::validate($objectSignature);
         $structName = $objectSignature->objectName;
         $isReadOnly = $objectSignature->isReadOnly;
         $elements = self::_buildElements($structName, $objectSignature->properties);
@@ -76,13 +80,12 @@ class StructReflectionUtility
     protected static function _buildElement(Property $property): StructElement
     {
         $structDataTypes = self::_buildStructDataTypesFromNamedType($property->parameter->types);
-        list($hasDefaultValue, $defaultValue) = self::_buildDefaultValue($property);
+        $defaultValue = self::_buildDefaultValue($property, $structDataTypes);
         $structArrayType =  self::_buildStructArrayType($property);
 
         $element = new StructElement(
             $property->parameter->name,
             $property->parameter->isAllowsNull,
-            $hasDefaultValue,
             $defaultValue,
             $structDataTypes,
             $structArrayType,
@@ -128,27 +131,21 @@ class StructReflectionUtility
         return $structArrayType;
     }
 
-    protected static function _buildDefaultValue(Property $property): array
+    /**
+     * @param array<StructDataType> $structDataTypes
+     */
+    protected static function _buildDefaultValue(Property $property, array $structDataTypes): ?Value
     {
-        $hasDefaultValue = $property->parameter->hasDefaultValue;
         $defaultValue = $property->parameter->defaultValue;
-        if ($hasDefaultValue === true) {
-            return [
-                true,
-                $defaultValue,
-            ];
-        }
-        $defaultValue = self::_findDefaultValue($property);
         if ($defaultValue !== null) {
-            $hasDefaultValue = true;
+            return $defaultValue;
         }
-        return [
-            $hasDefaultValue,
-            $defaultValue,
-        ];
+        $defaultValueData = self::_findDefaultValueData($property);
+        $defaultValue = ValueUtility::processValue($structDataTypes, $defaultValueData);
+        return $defaultValue;
     }
 
-    protected static function _findDefaultValue(Property $property): ?string
+    protected static function _findDefaultValueData(Property $property): ?Value
     {
         $defaultValueAttributeArguments = self::_findAttribute($property, DefaultValue::class);
         if (
@@ -158,7 +155,9 @@ class StructReflectionUtility
         ) {
             return null;
         }
-        return $defaultValueAttributeArguments[0];
+        $valueData = $defaultValueAttributeArguments[0];
+        $defaultValue = new Value($valueData);
+        return $defaultValue;
     }
 
     /**
@@ -208,11 +207,10 @@ class StructReflectionUtility
     {
         $structBaseDataTypes = StructDataTypeHelper::findDataType($dataType);
         $className = match ($structBaseDataTypes) {
-            StructBaseDataType::NULL,
             StructBaseDataType::Array,
             StructBaseDataType::Integer,
             StructBaseDataType::Boolean,
-            StructBaseDataType::Double,
+            StructBaseDataType::Float,
             StructBaseDataType::DateTime,
             StructBaseDataType::String => null,
             StructBaseDataType::DataType,

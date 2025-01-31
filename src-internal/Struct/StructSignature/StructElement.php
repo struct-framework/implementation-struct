@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Struct\Struct\Internal\Struct\StructSignature;
 
 use Struct\Attribute\ArrayList;
+use Struct\Reflection\Internal\Struct\ObjectSignature\Value;
 
 /**
  * @internal
@@ -17,9 +18,8 @@ readonly class StructElement
     public function __construct(
         public string $name,
         public bool $isAllowsNull,
-        public bool $hasDefaultValue,
-        public mixed $defaultValue,
-        #[ArrayList(StructBaseDataType::class)]
+        public ?Value $defaultValue,
+        #[ArrayList(StructDataType::class)]
         public array $structDataTypes,
         public ?StructArrayType $structArrayType,
     ) {

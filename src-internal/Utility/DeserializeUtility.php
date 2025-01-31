@@ -59,7 +59,7 @@ class DeserializeUtility
             StructBaseDataType::Enum => $this->_deserializeEnum($data, $type),
             StructBaseDataType::Array => $this->_deserializeArray($data, $parameter, $keyConvert),
             StructBaseDataType::DataType => $this->_deserializeDataType($data, $parameter), // @phpstan-ignore-line
-            StructBaseDataType::String, StructBaseDataType::DateTime, StructBaseDataType::Double, StructBaseDataType::Integer, StructBaseDataType::Boolean => $this->_deserializeBuildIn($data, $type, $parameter),
+            StructBaseDataType::String, StructBaseDataType::DateTime, StructBaseDataType::Float, StructBaseDataType::Integer, StructBaseDataType::Boolean => $this->_deserializeBuildIn($data, $type, $parameter),
         };
         return $result;
     }

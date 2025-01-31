@@ -4,41 +4,59 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Factory;
 
-use Struct\Contracts\DataTypeInterface;
+
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidValueException;
+use Struct\Reflection\Internal\Struct\ObjectSignature\Value;
 use Struct\Struct\Internal\Struct\StructSignature;
 use Struct\Struct\Internal\Struct\StructSignature\StructBaseDataType;
 use Struct\Struct\Internal\Struct\StructSignature\StructElement;
+use Struct\Struct\Internal\Utility\ValueUtility;
 use Struct\Struct\StructReflectionUtility;
-use UnitEnum;
 
 class StructFactory
 {
-    protected const string NO_VALUE = '7874539c-8ea3-47a0-8c6a-7bddb0e03e72';
-
     /**
      * @template T of StructInterface
      * @param  class-string<T> $structName
      * @return T
      */
-    public static function create(string $structName): StructInterface
+    public static function create(string $structName, null|array|object $data = null): StructInterface
     {
         $structSignature = StructReflectionUtility::readSignature($structName);
 
         try {
-            $values = self::_createValues($structSignature);
+            $values = self::_createValues($structSignature, $data);
         } catch (InvalidValueException $invalidValueException) {
             throw new InvalidValueException($invalidValueException, '<' . $structName . '>');
         }
         if ($structSignature->isReadOnly === true) {
-            $struct = new $structName(...$values);
+            $valueDataArray = self::_buildValueDataArray($values);
+            $struct = new $structName(...$valueDataArray);
         } else {
             $struct = new $structName();
             self::_assignValues($struct, $values);
         }
         return $struct;
     }
+
+    /**
+     * @param array<Value> $values
+     * @return array<mixed>
+     */
+    protected static function _buildValueDataArray(array $values): array
+    {
+        $valueDataArray = [];
+        foreach ($values as $value) {
+            if($value === null) {
+                $valueDataArray[] = null;
+                continue;
+            }
+            $valueDataArray[] = $value->valueData;
+        }
+        return $valueDataArray;
+    }
+
 
     protected static function _assignValues(StructInterface &$struct, mixed $values): void
     {
@@ -47,25 +65,28 @@ class StructFactory
         }
     }
 
-    protected static function _assignValue(StructInterface &$struct, string $propertyName, mixed $value): void
+    protected static function _assignValue(StructInterface &$struct, string $propertyName, ?Value $value): void
     {
-        if ($value === self::NO_VALUE) {
+        if ($value === null) {
             return;
         }
         try {
-            $struct->$propertyName = $value;
+            $struct->$propertyName = $value->valueData;
         } catch (\Throwable $exception) {
             throw new InvalidValueException($exception);
         }
     }
 
-    protected static function _createValues(StructSignature $structSignature): array
+    /**
+     * @return array<null|Value>
+     */
+    protected static function _createValues(StructSignature $structSignature, null|array|object $data): array
     {
         $values = [];
         foreach ($structSignature->structElements as $structElement) {
             $propertyName = $structElement->name;
             try {
-                $values[$propertyName] = self::buildValue($structElement);
+                $values[$propertyName] = self::buildValue($structElement, $data);
             } catch (InvalidValueException $invalidValueException) {
                 throw new InvalidValueException($invalidValueException, ':' . $propertyName);
             }
@@ -73,72 +94,60 @@ class StructFactory
         return $values;
     }
 
-    protected static function buildValue(StructElement $structElement): mixed
+
+    protected static function buildValue(StructElement $structElement, null|array|object $data): ?Value
     {
         $structDataType = $structElement->structDataTypes[0];
+        $valueFromData = self::_findValueFromData($structElement, $data);
+        if($valueFromData !== null) {
+            return $valueFromData;
+        }
         $value = match ($structDataType->structBaseDataType) {
-            StructBaseDataType::NULL,
             StructBaseDataType::Boolean,
             StructBaseDataType::Integer,
-            StructBaseDataType::Double,
+            StructBaseDataType::Float,
             StructBaseDataType::String,
-            StructBaseDataType::Enum => self::_buildValueDefault($structElement),
-            StructBaseDataType::DateTime => self::_buildValueDateTime($structElement),
+            StructBaseDataType::Enum,
+            StructBaseDataType::DateTime,
+            StructBaseDataType::DataType => $structElement->defaultValue,
             StructBaseDataType::Array => self::_buildValueArray($structElement),
-            StructBaseDataType::DataType => self::_buildValueDataType($structElement),
-            StructBaseDataType::Struct => self::_buildValueStruct($structElement),
+            StructBaseDataType::Struct => self::_buildValueStruct($structElement, $data),
         };
         return $value;
     }
 
-    protected static function _buildValueArray(StructElement $structElement): null|array
-    {
-        if ($structElement->isAllowsNull === true) {
-            return null;
-        }
-        return [];
-    }
 
-    protected static function _buildValueDataType(StructElement $structElement): null|string|DataTypeInterface
+    protected static function _findValueFromData(StructElement $structElement, null|array|object $data): ?Value
     {
-        $className = $structElement->structDataTypes[0]->className;
-        if ($structElement->hasDefaultValue === true) {
-            if (is_string($structElement->defaultValue) === true) {
-                return DataTypeFactory::create($className, (string) $structElement->defaultValue);
+        $name = $structElement->name;
+        $valueData = null;
+        if(is_array($data) === true) {
+            if(array_key_exists($name, $data) === true) {
+                $valueData = $data[$name];
             }
-            return $structElement->defaultValue;
         }
-        if ($structElement->isAllowsNull === true) {
-            return null;
+        $value = null;
+        if($valueData !== null) {
+            $value = new Value($valueData);
         }
-        return self::NO_VALUE;
+        $valueFromData = ValueUtility::processValue($structElement->structDataTypes, $value);
+        return $valueFromData;
     }
 
-    protected static function _buildValueStruct(StructElement $structElement): StructInterface
+
+    protected static function _buildValueArray(StructElement $structElement): Value
+    {
+        if ($structElement->isAllowsNull === true) {
+            return new Value(null);
+        }
+        return new Value([]);
+    }
+
+    protected static function _buildValueStruct(StructElement $structElement, null|array|object $data): Value
     {
         $className = $structElement->structDataTypes[0]->className;
-        return self::create($className);
+        $struct =  self::create($className, $data);
+        return new Value($struct);
     }
 
-    protected static function _buildValueDefault(StructElement $structElement): null|bool|int|float|string|UnitEnum
-    {
-        if ($structElement->hasDefaultValue === true) {
-            return $structElement->defaultValue;
-        }
-        if ($structElement->isAllowsNull === true) {
-            return null;
-        }
-        return self::NO_VALUE;
-    }
-
-    protected static function _buildValueDateTime(StructElement $structElement): null|\DateTimeInterface
-    {
-        if ($structElement->hasDefaultValue === true) {
-            return new \DateTimeImmutable($structElement->defaultValue);
-        }
-        if ($structElement->isAllowsNull === true) {
-            return null;
-        }
-        return new \DateTimeImmutable('1900-01-01 00:00:00', new \DateTimeZone('UTC'));
-    }
 }
