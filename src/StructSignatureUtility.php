@@ -11,7 +11,7 @@ use Struct\Attribute\ArrayList;
 use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructInterface;
 use Struct\Reflection\Internal\Struct\ObjectSignature\Property;
-use Struct\Struct\Internal\Enum\StructDataType;
+use Struct\Struct\Internal\Struct\StructSignature\StructBaseDataType;
 
 class StructSignatureUtility
 {
@@ -62,18 +62,18 @@ class StructSignatureUtility
         }
         $structDataType = self::findDataType($propertyValue);
         $data = match ($structDataType) {
-            StructDataType::NULL     => 'null',
-            StructDataType::DateTime => self::buildValueFromDateTime($propertyValue), // @phpstan-ignore-line
-            StructDataType::Enum     => self::buildValueFromEnum($propertyValue), // @phpstan-ignore-line
-            StructDataType::DataType => self::buildValueFromDataType($propertyValue), // @phpstan-ignore-line
-            StructDataType::Boolean  => self::buildValueBoolean($propertyValue), // @phpstan-ignore-line
+            StructBaseDataType::NULL     => 'null',
+            StructBaseDataType::DateTime => self::buildValueFromDateTime($propertyValue), // @phpstan-ignore-line
+            StructBaseDataType::Enum     => self::buildValueFromEnum($propertyValue), // @phpstan-ignore-line
+            StructBaseDataType::DataType => self::buildValueFromDataType($propertyValue), // @phpstan-ignore-line
+            StructBaseDataType::Boolean  => self::buildValueBoolean($propertyValue), // @phpstan-ignore-line
 
-            StructDataType::Integer,
-            StructDataType::Double,
-            StructDataType::String   => (string) $propertyValue, // @phpstan-ignore-line
+            StructBaseDataType::Integer,
+            StructBaseDataType::Double,
+            StructBaseDataType::String   => (string) $propertyValue, // @phpstan-ignore-line
 
-            StructDataType::Array,
-            StructDataType::Struct => throw new UnexpectedException(1737888077),
+            StructBaseDataType::Array,
+            StructBaseDataType::Struct => throw new UnexpectedException(1737888077),
         };
         $propertyValueStrings[] = $prefix . '_' . $structDataType->value . ':' . self::encode($data);
     }
@@ -137,32 +137,32 @@ class StructSignatureUtility
         return $data;
     }
 
-    protected static function findDataType(mixed $value): StructDataType
+    protected static function findDataType(mixed $value): StructBaseDataType
     {
         $type = gettype($value);
         if ($value === null) {
-            return StructDataType::NULL;
+            return StructBaseDataType::NULL;
         }
         if ($value instanceof \DateTimeInterface) {
-            return StructDataType::DateTime;
+            return StructBaseDataType::DateTime;
         }
         if ($value instanceof \UnitEnum) {
-            return StructDataType::Enum;
+            return StructBaseDataType::Enum;
         }
         if ($value instanceof DataTypeInterface) {
-            return StructDataType::DataType;
+            return StructBaseDataType::DataType;
         }
         if ($type === 'boolean') {
-            return StructDataType::Boolean;
+            return StructBaseDataType::Boolean;
         }
         if ($type === 'integer') {
-            return StructDataType::Integer;
+            return StructBaseDataType::Integer;
         }
         if ($type === 'double') {
-            return StructDataType::Double;
+            return StructBaseDataType::Double;
         }
         if ($type === 'string') {
-            return StructDataType::String;
+            return StructBaseDataType::String;
         }
         throw new UnexpectedException(1701724351);
     }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Struct\Struct;
 
-use ReflectionUtility;
 use Struct\Attribute\ArrayKeyList;
 use Struct\Attribute\ArrayList;
 use Struct\Contracts\DataTypeInterface;
@@ -16,6 +15,7 @@ use Struct\Reflection\Internal\Struct\ObjectSignature\Parts\IntersectionType;
 use Struct\Reflection\Internal\Struct\ObjectSignature\Parts\NamedType;
 use Struct\Reflection\Internal\Struct\ObjectSignature\Parts\Visibility;
 use Struct\Reflection\Internal\Struct\ObjectSignature\Property;
+use Struct\Reflection\ReflectionUtility;
 
 class StructValidatorUtility
 {
@@ -27,7 +27,7 @@ class StructValidatorUtility
         ) {
             throw new InvalidStructException('Class must implements <' . StructInterface::class . '>', 1737828376);
         }
-        $signature = ReflectionUtility::readObjectSignature($struct);
+        $signature = ReflectionUtility::readSignature($struct);
         self::checkForMethods($signature);
         self::checkProperties($signature);
     }
@@ -40,7 +40,7 @@ class StructValidatorUtility
         ) {
             throw new InvalidStructException('Class must implements <' . DataTypeInterface::class . '>', 1737834524);
         }
-        $signature = ReflectionUtility::readObjectSignature($dataType);
+        $signature = ReflectionUtility::readSignature($dataType);
         if ($signature->isReadOnly === false) {
             throw new InvalidStructException('The data type <' . $signature->objectName . '> must be readonly', 1737834619);
         }

@@ -20,8 +20,9 @@ use Struct\Reflection\Internal\Struct\ObjectSignature\Parameter;
 use Struct\Reflection\Internal\Struct\ObjectSignature\Parts\NamedType;
 use Struct\Struct\Enum\KeyConvert;
 use Struct\Struct\Factory\DataTypeFactory;
-use Struct\Struct\Internal\Enum\StructDataType;
 use Struct\Struct\Internal\Helper\FormatHelper;
+use Struct\Struct\Internal\Helper\StructDataTypeHelper;
+use Struct\Struct\Internal\Struct\StructSignature\StructBaseDataType;
 use UnitEnum;
 use function array_key_exists;
 use function is_array;
@@ -53,12 +54,12 @@ class DeserializeUtility
     {
         $dataType = $this->_findDataType($data, $type);
         $result = match ($dataType) {
-            StructDataType::Struct  => $this->_deserializeStruct($data, $type, $keyConvert), // @phpstan-ignore-line
-            StructDataType::NULL => $this->parseNull($parameter),
-            StructDataType::Enum => $this->_deserializeEnum($data, $type),
-            StructDataType::Array => $this->_deserializeArray($data, $parameter, $keyConvert),
-            StructDataType::DataType => $this->_deserializeDataType($data, $parameter), // @phpstan-ignore-line
-            StructDataType::String, StructDataType::DateTime, StructDataType::Double, StructDataType::Integer, StructDataType::Boolean => $this->_deserializeBuildIn($data, $type, $parameter),
+            StructBaseDataType::Struct  => $this->_deserializeStruct($data, $type, $keyConvert), // @phpstan-ignore-line
+            StructBaseDataType::NULL => $this->parseNull($parameter),
+            StructBaseDataType::Enum => $this->_deserializeEnum($data, $type),
+            StructBaseDataType::Array => $this->_deserializeArray($data, $parameter, $keyConvert),
+            StructBaseDataType::DataType => $this->_deserializeDataType($data, $parameter), // @phpstan-ignore-line
+            StructBaseDataType::String, StructBaseDataType::DateTime, StructBaseDataType::Double, StructBaseDataType::Integer, StructBaseDataType::Boolean => $this->_deserializeBuildIn($data, $type, $parameter),
         };
         return $result;
     }
@@ -105,40 +106,12 @@ class DeserializeUtility
         return $structure;
     }
 
-    protected function _findDataType(mixed $data, NamedType $type): StructDataType
+    protected function _findDataType(mixed $data, NamedType $type): StructBaseDataType
     {
         if ($data === null) {
-            return StructDataType::NULL;
+            return StructBaseDataType::NULL;
         }
-        $dataType = $type->dataType;
-        if (is_a($dataType, UnitEnum::class, true) === true) {
-            return StructDataType::Enum;
-        }
-        if (is_a($dataType, DataTypeInterface::class, true) === true) {
-            return StructDataType::DataType;
-        }
-        if (is_a($dataType, StructInterface::class, true) === true) {
-            return StructDataType::Struct;
-        }
-        if (is_a($dataType, DateTimeInterface::class, true) === true) {
-            return StructDataType::DateTime;
-        }
-        if ($dataType === 'array') {
-            return StructDataType::Array;
-        }
-        if ($dataType === 'bool') {
-            return StructDataType::Boolean;
-        }
-        if ($dataType === 'string') {
-            return StructDataType::String;
-        }
-        if ($dataType === 'int') {
-            return StructDataType::Integer;
-        }
-        if ($dataType === 'float') {
-            return StructDataType::Double;
-        }
-        throw new LogicException('The type: ' . $dataType . ' is not supported', 1737881559);
+        return StructDataTypeHelper::findDataType($type);
     }
 
     protected function _deserializeEnum(mixed $data, NamedType $type): UnitEnum

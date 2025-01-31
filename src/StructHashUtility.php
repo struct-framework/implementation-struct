@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace Struct\Struct;
 
-use function array_is_list;
 use BackedEnum;
 use DateTime;
 use DateTimeInterface;
 use Exception\Unexpected\UnexpectedException;
-use function gettype;
 use ReflectionClass;
 use ReflectionException;
 use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidStructException;
 use Struct\Struct\Enum\HashAlgorithm;
-use Struct\Struct\Internal\Enum\StructDataType;
+use Struct\Struct\Internal\Struct\StructSignature\StructBaseDataType;
 use UnitEnum;
+use function array_is_list;
+use function gettype;
 
 class StructHashUtility
 {
@@ -45,16 +45,16 @@ class StructHashUtility
     {
         $dataType = self::findDataType($value);
         $data = match ($dataType) {
-            StructDataType::NULL             => '4237d4b9-00b6-4ebd-b482-e77551cd1620',
-            StructDataType::Struct           => self::buildHashFromStruct($value, $algorithm), // @phpstan-ignore-line
-            StructDataType::DateTime         => self::buildHashFromDateTime($value, $algorithm), // @phpstan-ignore-line
-            StructDataType::Enum             => self::buildHashFromEnum($value, $algorithm), // @phpstan-ignore-line
-            StructDataType::DataType         => self::buildHashFromDataType($value, $algorithm), // @phpstan-ignore-line
-            StructDataType::Array            => self::buildHashFromArray($value, $algorithm), // @phpstan-ignore-line
-            StructDataType::Boolean,
-            StructDataType::Integer,
-            StructDataType::Double,
-            StructDataType::String           => self::buildHashFromDefault($value, $algorithm), // @phpstan-ignore-line
+            StructBaseDataType::NULL             => '4237d4b9-00b6-4ebd-b482-e77551cd1620',
+            StructBaseDataType::Struct           => self::buildHashFromStruct($value, $algorithm), // @phpstan-ignore-line
+            StructBaseDataType::DateTime         => self::buildHashFromDateTime($value, $algorithm), // @phpstan-ignore-line
+            StructBaseDataType::Enum             => self::buildHashFromEnum($value, $algorithm), // @phpstan-ignore-line
+            StructBaseDataType::DataType         => self::buildHashFromDataType($value, $algorithm), // @phpstan-ignore-line
+            StructBaseDataType::Array            => self::buildHashFromArray($value, $algorithm), // @phpstan-ignore-line
+            StructBaseDataType::Boolean,
+            StructBaseDataType::Integer,
+            StructBaseDataType::Double,
+            StructBaseDataType::String           => self::buildHashFromDefault($value, $algorithm), // @phpstan-ignore-line
         };
         $hash = hash($algorithm->value, $dataType->value . $data, true);
         return $hash;
@@ -136,38 +136,38 @@ class StructHashUtility
         return $propertyNames;
     }
 
-    protected static function findDataType(mixed $value): StructDataType
+    protected static function findDataType(mixed $value): StructBaseDataType
     {
         $type = gettype($value);
         if ($value === null) {
-            return StructDataType::NULL;
+            return StructBaseDataType::NULL;
         }
         if ($value instanceof StructInterface) {
-            return StructDataType::Struct;
+            return StructBaseDataType::Struct;
         }
         if ($value instanceof DateTimeInterface) {
-            return StructDataType::DateTime;
+            return StructBaseDataType::DateTime;
         }
         if ($value instanceof UnitEnum) {
-            return StructDataType::Enum;
+            return StructBaseDataType::Enum;
         }
         if ($value instanceof DataTypeInterface) {
-            return StructDataType::DataType;
+            return StructBaseDataType::DataType;
         }
         if ($type === 'array') {
-            return StructDataType::Array;
+            return StructBaseDataType::Array;
         }
         if ($type === 'boolean') {
-            return StructDataType::Boolean;
+            return StructBaseDataType::Boolean;
         }
         if ($type === 'integer') {
-            return StructDataType::Integer;
+            return StructBaseDataType::Integer;
         }
         if ($type === 'double') {
-            return StructDataType::Double;
+            return StructBaseDataType::Double;
         }
         if ($type === 'string') {
-            return StructDataType::String;
+            return StructBaseDataType::String;
         }
         throw new UnexpectedException(1701724351);
     }
