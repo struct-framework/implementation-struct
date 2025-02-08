@@ -13,11 +13,11 @@ use Struct\Struct\Internal\Struct\StructSignature\DataType\StructDataTypeCollect
 readonly class StructElement
 {
     public function __construct(
-        public string                   $name,
-        public bool                     $isAllowsNull,
-        public ?Value                   $defaultValue,
+        public string $name,
+        public bool $isAllowsNull,
+        public ?Value $defaultValue,
         public StructDataTypeCollection $structDataTypeCollection,
-        public ?StructElementArray      $structElementArray,
+        public ?StructElementArray $structElementArray,
     ) {
     }
 }

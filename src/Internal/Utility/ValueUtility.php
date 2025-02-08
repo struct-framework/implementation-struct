@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Internal\Utility;
 
-
 use Struct\Contracts\DataTypeInterface;
 use Struct\Exception\InvalidStructException;
 use Struct\Reflection\Internal\Struct\ObjectSignature\Value;
@@ -18,18 +17,17 @@ use Struct\Struct\Internal\Struct\StructSignature\StructBaseDataType;
  */
 class ValueUtility
 {
-
     /**
      * @param array<StructDataType> $structDataTypes
      */
     public static function processValue(array $structDataTypes, ?Value $value): ?Value
     {
-        if($value === null) {
+        if ($value === null) {
             return null;
         }
         $valueData = $value->valueData;
         $valueDataType = StructDataTypeHelper::findDataTypeFromValue($valueData);
-        if(count($structDataTypes) === 1) {
+        if (count($structDataTypes) === 1) {
             $structDataType = $structDataTypes[0];
             $value = self::_processValue($structDataType, $valueData, $valueDataType);
             return new Value($value);
@@ -39,11 +37,11 @@ class ValueUtility
 
     protected static function _processValue(StructDataType $structDataType, StructBaseDataType $valueDataType, mixed $valueData): mixed
     {
-        if(self::_valueIsSameDataType($structDataType, $valueDataType, $valueData) === true) {
+        if (self::_valueIsSameDataType($structDataType, $valueDataType, $valueData) === true) {
             return $valueData;
         }
         $phpType = StructDataTypeHelper::findPhpType($structDataType->structUnderlyingDataType);
-        if($phpType !== $valueDataType) {
+        if ($phpType !== $valueDataType) {
             throw new InvalidStructException(1739028724, 'Bla');
         }
         $value = match ($structDataType->structUnderlyingDataType) {
@@ -63,11 +61,11 @@ class ValueUtility
     protected static function _processDataType(StructDataType $structDataType, Value $value): ?Value
     {
         $className = $structDataType->className;
-        if(is_a($className, DataTypeInterface::class, true) === false) {
+        if (is_a($className, DataTypeInterface::class, true) === false) {
             return null;
         }
         $valueData = $value->valueData;
-        if(is_string($valueData) === false) {
+        if (is_string($valueData) === false) {
             return null;
         }
         $dataType = DataTypeFactory::create($structDataType->className, $valueData);
@@ -77,7 +75,7 @@ class ValueUtility
     protected static function _processEnum(StructDataType $structDataType, Value $value): ?Value
     {
         $valueData = $value->valueData;
-        if(
+        if (
             is_int($valueData) === false &&
             is_string($valueData) === false
         ) {
@@ -105,14 +103,14 @@ class ValueUtility
     protected static function _processDateTime(Value $value): ?Value
     {
         $valueData = $value->valueData;
-        if(is_a($valueData, \DateTimeInterface::class, true) === true) {
+        if (is_a($valueData, \DateTimeInterface::class, true) === true) {
             return $value;
         }
         $dateTime = null;
-        if(is_string($valueData) === true) {
+        if (is_string($valueData) === true) {
             $dateTime = new \DateTimeImmutable($valueData);
         }
-        if($dateTime === null) {
+        if ($dateTime === null) {
             $dateTime = new \DateTimeImmutable('1900-01-01 00:00:00', new \DateTimeZone('UTC'));
         }
         $value = new Value($dateTime);
@@ -121,13 +119,13 @@ class ValueUtility
 
     protected static function _valueIsSameDataType(StructDataType $structDataType, StructBaseDataType $valueDataType, mixed $valueData): bool
     {
-        if($structDataType->structUnderlyingDataType === $valueDataType) {
+        if ($structDataType->structUnderlyingDataType === $valueDataType) {
             return $valueData;
         }
-        if($structDataType->className === null) {
+        if ($structDataType->className === null) {
             return false;
         }
-        if(is_a($valueData, $structDataType->className, true) === false) {
+        if (is_a($valueData, $structDataType->className, true) === false) {
             return false;
         }
         return true;

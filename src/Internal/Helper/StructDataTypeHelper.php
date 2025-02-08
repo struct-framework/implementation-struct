@@ -9,8 +9,8 @@ use IntBackedEnum;
 use LogicException;
 use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructInterface;
-use Struct\Struct\Internal\Struct\StructSignature\DataType\UnclearDataType;
 use Struct\Struct\Internal\Struct\StructSignature\DataType\StructUnderlyingDataType;
+use Struct\Struct\Internal\Struct\StructSignature\DataType\UnclearDataType;
 use UnitEnum;
 
 /**
@@ -20,24 +20,24 @@ class StructDataTypeHelper
 {
     public static function findUnderlyingDataTypeFromValue(mixed $value): StructUnderlyingDataType
     {
-        if($value === null) {
+        if ($value === null) {
             throw new LogicException('Value must not be null', 1739024555);
         }
-        if(is_array($value) === true) {
-            if(array_is_list($value) === true) {
+        if (is_array($value) === true) {
+            if (array_is_list($value) === true) {
                 return StructUnderlyingDataType::ArrayList;
             }
             return StructUnderlyingDataType::Array;
         }
-        if(is_object($value) === true) {
+        if (is_object($value) === true) {
             $result = self::checkForClassType($value);
-            if($result !== null) {
+            if ($result !== null) {
                 return $result;
             }
         }
         $dataType = gettype($value);
         $result = self::checkForBuildInType($dataType);
-        if($result !== null) {
+        if ($result !== null) {
             return $result;
         }
         throw new LogicException('The type is not supported', 1739024555);
@@ -65,11 +65,11 @@ class StructDataTypeHelper
     public static function findUnderlyingDataType(string $dataType): StructUnderlyingDataType
     {
         $result = self::checkForClassType($dataType);
-        if($result !== null) {
+        if ($result !== null) {
             return $result;
         }
         $result = self::checkForBuildInType($dataType);
-        if($result !== null) {
+        if ($result !== null) {
             return $result;
         }
         throw new LogicException('The type: ' . $dataType . ' is not supported', 1738258655);

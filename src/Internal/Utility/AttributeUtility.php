@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Internal\Utility;
 
-
 use Struct\Reflection\Internal\Struct\ObjectSignature\Parts\Attribute;
 use Struct\Reflection\Internal\Struct\ObjectSignature\Property;
 
@@ -13,14 +12,13 @@ use Struct\Reflection\Internal\Struct\ObjectSignature\Property;
  */
 class AttributeUtility
 {
-
     /**
      * @return array<string>|null
      */
     public static function findFirstAttributeArgumentAsArray(Property $property, string $attributeName): ?array
     {
         $argument =  self::findFirstAttributeArgumentAsArrayOrString($property, $attributeName);
-        if(is_array($argument) === true) {
+        if (is_array($argument) === true) {
             return $argument;
         }
         return null;
@@ -29,7 +27,7 @@ class AttributeUtility
     public static function findFirstAttributeArgumentAsString(Property $property, string $attributeName): ?string
     {
         $argument =  self::findFirstAttributeArgumentAsArrayOrString($property, $attributeName);
-        if(is_string($argument) === true) {
+        if (is_string($argument) === true) {
             return $argument;
         }
         return null;
@@ -41,15 +39,15 @@ class AttributeUtility
     public static function findFirstAttributeArgumentAsArrayOrString(Property $property, string $attributeName): null|string|array
     {
         $argument =  self::_findFirstAttributeArgument($property, $attributeName);
-        if(is_string($argument) === true) {
+        if (is_string($argument) === true) {
             return $argument;
         }
-        if(is_array($argument) === false) {
+        if (is_array($argument) === false) {
             return null;
         }
         $items = [];
         foreach ($argument as $item) {
-            if(is_string($item) === false) {
+            if (is_string($item) === false) {
                 continue;
             }
             $items[] = $item;
@@ -60,7 +58,7 @@ class AttributeUtility
     public static function findFirstAttribute(Property $property, string $attributeName): ?Attribute
     {
         $attributes = self::_findAttributes($property, $attributeName);
-        if(count($attributes) === 0) {
+        if (count($attributes) === 0) {
             return null;
         }
         return $attributes[0];
@@ -69,11 +67,11 @@ class AttributeUtility
     protected static function _findFirstAttributeArgument(Property $property, string $attributeName): mixed
     {
         $attribute = self::findFirstAttribute($property, $attributeName);
-        if($attribute === null) {
+        if ($attribute === null) {
             return null;
         }
         $arguments = $attribute->arguments;
-        if(count($arguments) === 0) {
+        if (count($arguments) === 0) {
             return null;
         }
         return $arguments[0];
@@ -92,5 +90,4 @@ class AttributeUtility
         }
         return $attributes;
     }
-
 }

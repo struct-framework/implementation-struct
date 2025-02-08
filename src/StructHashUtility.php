@@ -7,9 +7,7 @@ namespace Struct\Struct;
 use function array_is_list;
 use BackedEnum;
 use DateTime;
-use DateTimeInterface;
 use Exception\Unexpected\UnexpectedException;
-use function gettype;
 use ReflectionClass;
 use ReflectionException;
 use Struct\Contracts\DataTypeInterface;
@@ -134,5 +132,4 @@ class StructHashUtility
         }
         return $propertyNames;
     }
-
 }

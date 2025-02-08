@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Factory;
 
-
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidValueException;
 use Struct\Reflection\Internal\Struct\ObjectSignature\Value;
 use Struct\Struct\Internal\Struct\StructSignature;
+use Struct\Struct\Internal\Struct\StructSignature\DataType\StructUnderlyingDataType;
 use Struct\Struct\Internal\Struct\StructSignature\StructElement;
 use Struct\Struct\StructReflectionUtility;
-use Struct\Struct\Internal\Struct\StructSignature\DataType\StructUnderlyingDataType;
 
 class StructFactory
 {
@@ -47,7 +46,7 @@ class StructFactory
     {
         $valueDataArray = [];
         foreach ($values as $value) {
-            if($value === null) {
+            if ($value === null) {
                 $valueDataArray[] = null;
                 continue;
             }
@@ -55,7 +54,6 @@ class StructFactory
         }
         return $valueDataArray;
     }
-
 
     protected static function _assignValues(StructInterface &$struct, mixed $values): void
     {
@@ -93,26 +91,24 @@ class StructFactory
         return $values;
     }
 
-
     protected static function buildValue(StructElement $structElement, null|array|object $data): ?Value
     {
-        if( $structElement->defaultValue !== null) {
+        if ($structElement->defaultValue !== null) {
             return  $structElement->defaultValue;
         }
-        if( $structElement->isAllowsNull === true) {
+        if ($structElement->isAllowsNull === true) {
             return new Value(null);
         }
 
         foreach ($structElement->structDataTypeCollection->structDataTypes as $structDataType) {
-            if($structDataType->structUnderlyingDataType === StructUnderlyingDataType::Array) {
+            if ($structDataType->structUnderlyingDataType === StructUnderlyingDataType::Array) {
                 return new Value([]);
             }
-            if($structDataType->structUnderlyingDataType === StructUnderlyingDataType::Struct) {
+            if ($structDataType->structUnderlyingDataType === StructUnderlyingDataType::Struct) {
                 $struct = self::create($structDataType->className);
                 return new Value($struct);
             }
         }
         return null;
     }
-
 }

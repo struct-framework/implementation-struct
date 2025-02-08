@@ -32,10 +32,6 @@ class FormatHelper
         return $enum->name;
     }
 
-
-
-
-
     public static function formatBuildIn(mixed $value, NamedType $toType): mixed
     {
         $dataType = $toType->dataType;

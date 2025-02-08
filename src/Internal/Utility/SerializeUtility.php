@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Internal\Utility;
 
+use function array_is_list;
 use BackedEnum;
+use DateTimeInterface;
+use Struct\Contracts\DataTypeInterface;
+use Struct\Contracts\StructInterface;
+use Struct\Struct\Enum\KeyConvert;
 use Struct\Struct\Internal\Helper\StructDataTypeHelper;
 use Struct\Struct\Internal\Struct\StructSignature\DataType\StructDataTypeCollection;
 use Struct\Struct\Internal\Struct\StructSignature\DataType\StructUnderlyingArrayType;
 use Struct\Struct\Internal\Struct\StructSignature\DataType\StructUnderlyingDataType;
 use Struct\Struct\Internal\Struct\StructSignature\StructElementArray;
 use Struct\Struct\StructReflectionUtility;
-use function array_is_list;
-use DateTimeInterface;
-use Struct\Contracts\DataTypeInterface;
-use Struct\Contracts\StructInterface;
-use Struct\Struct\Enum\KeyConvert;
 use UnitEnum;
 
 /**
@@ -51,7 +51,7 @@ class SerializeUtility
 
     protected function formatValue(StructDataTypeCollection $structDataTypeCollection, mixed $value, ?StructElementArray $structElementArray = null): mixed
     {
-        if($value === null) {
+        if ($value === null) {
             return null;
         }
         $structUnderlyingDataType = StructDataTypeHelper::findUnderlyingDataTypeFromValue($value);
@@ -74,14 +74,14 @@ class SerializeUtility
 
     protected function formatArray(StructDataTypeCollection $structDataTypeCollection, array $value, StructElementArray $structElementArray): array
     {
-        if($structElementArray->structUnderlyingArrayType === StructUnderlyingArrayType::ArrayPassThrough) {
+        if ($structElementArray->structUnderlyingArrayType === StructUnderlyingArrayType::ArrayPassThrough) {
             return $value;
         }
         $output = [];
         $isList = array_is_list($value);
         foreach ($value as $key => $item) {
             $formattedValue = $this->formatValue($structElementArray->structDataTypeCollection, $item);
-            if($isList === true) {
+            if ($isList === true) {
                 $output[] = $formattedValue;
             } else {
                 $output[$key] = $formattedValue;
@@ -123,11 +123,11 @@ class SerializeUtility
 
     protected function formatUnclear(StructDataTypeCollection $structDataTypeCollection, string|int|array $value, string $className): string|int|array
     {
-        if(is_string($value) === true) {
+        if (is_string($value) === true) {
             $formattedValue = $this->formatUnclearType($structDataTypeCollection, $value, $className, 'unclearString');
             return $formattedValue;
         }
-        if(is_int($value) === true) {
+        if (is_int($value) === true) {
             $formattedValue = $this->formatUnclearType($structDataTypeCollection, $value, $className, 'unclearInt');
             return $formattedValue;
         }
@@ -137,7 +137,7 @@ class SerializeUtility
 
     protected function formatUnclearType(StructDataTypeCollection $structDataTypeCollection, string|int|array $value, string $className, string $type): string|int|array
     {
-        if($structDataTypeCollection->$type === false) {
+        if ($structDataTypeCollection->$type === false) {
             return $value;
         }
         return [

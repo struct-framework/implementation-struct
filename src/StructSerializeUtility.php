@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Struct\Struct;
 
 use Exception\Unexpected\UnexpectedException;
-use Struct\Struct\Factory\StructFactory;
 use function json_decode;
 use function json_encode;
 use JsonException;
 use LogicException;
 use Struct\Contracts\StructInterface;
 use Struct\Struct\Enum\KeyConvert;
+use Struct\Struct\Factory\StructFactory;
 use Struct\Struct\Internal\Utility\SerializeUtility;
 
 class StructSerializeUtility
