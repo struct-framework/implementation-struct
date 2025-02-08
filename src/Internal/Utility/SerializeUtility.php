@@ -4,22 +4,18 @@ declare(strict_types=1);
 
 namespace Struct\Struct\Internal\Utility;
 
+use BackedEnum;
+use Struct\Struct\Internal\Helper\StructDataTypeHelper;
+use Struct\Struct\Internal\Struct\StructSignature\DataType\StructDataTypeCollection;
+use Struct\Struct\Internal\Struct\StructSignature\DataType\StructUnderlyingArrayType;
+use Struct\Struct\Internal\Struct\StructSignature\DataType\StructUnderlyingDataType;
+use Struct\Struct\Internal\Struct\StructSignature\StructElementArray;
+use Struct\Struct\StructReflectionUtility;
 use function array_is_list;
 use DateTimeInterface;
-use Exception\Unexpected\UnexpectedException;
-use function gettype;
-use function is_a;
-use function is_array;
-use function is_object;
-use ReflectionClass;
-
-use ReflectionException;
 use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructInterface;
-use Struct\Exception\InvalidStructException;
-use Struct\Exception\SerializeException;
 use Struct\Struct\Enum\KeyConvert;
-use Struct\Struct\Internal\Helper\FormatHelper;
 use UnitEnum;
 
 /**
@@ -30,130 +26,123 @@ class SerializeUtility
     /**
      * @return array<mixed>
      */
-    public function serialize(StructInterface $structure, ?KeyConvert $keyConvert): array
+    public function serializeStruct(StructInterface $structure, ?KeyConvert $keyConvert): array
     {
-        $serializedData = $this->_serialize($structure, $keyConvert);
+        $serializedData = $this->_serializeStruct($structure, $keyConvert);
         return $serializedData;
     }
 
     /**
      * @return array<mixed>
      */
-    public function _serialize(StructInterface $structure, ?KeyConvert $keyConvert): array
+    public function _serializeStruct(StructInterface $struct, ?KeyConvert $keyConvert = null): array
     {
         $serializedData = [];
-
-        $propertyNames = $this->readPropertyNames($structure);
-        foreach ($propertyNames as $propertyName) {
-            $value = $structure->$propertyName; // @phpstan-ignore-line
-            try {
-                $formattedValue = $this->formatValue($value, $keyConvert);
-            } catch (SerializeException $serializeException) {
-                throw new SerializeException(1724534315, $structure::class, null, $serializeException);
-            }
-
-            if ($formattedValue === null) {
-                continue;
-            }
-            $arrayKey = CaseStyleUtility::buildArrayKeyFromPropertyName($propertyName, $keyConvert);
-            $serializedData[$arrayKey] = $formattedValue;
+        $structSignature = StructReflectionUtility::readSignature($struct);
+        foreach ($structSignature->structElements as $structElement) {
+            $propertyName = $structElement->name;
+            $value = $struct->$propertyName; // @phpstan-ignore-line
+            $formattedValue = $this->formatValue($structElement->structDataTypeCollection, $value, $structElement->structElementArray);
+            $serializedData[$propertyName] = $formattedValue;
         }
 
         return $serializedData;
     }
 
-    /**
-     * @return string[]
-     */
-    protected function readPropertyNames(StructInterface $structure): array
+    protected function formatValue(StructDataTypeCollection $structDataTypeCollection, mixed $value, ?StructElementArray $structElementArray = null): mixed
     {
-        $propertyNames = [];
-        try {
-            $reflection = new ReflectionClass($structure);
-            // @phpstan-ignore-next-line
-        } catch (ReflectionException $exception) {
-            throw new UnexpectedException(651559371, $exception);
-        }
-        $reflectionProperties = $reflection->getProperties();
-        foreach ($reflectionProperties as $reflectionProperty) {
-            $propertyName = $reflectionProperty->getName();
-            if ($reflectionProperty->isPublic() === false) {
-                throw new InvalidStructException(1738341233, 'The property <' . $propertyName . '> must be public');
-            }
-            $propertyNames[] = $propertyName;
-        }
-        return $propertyNames;
-    }
-
-    protected function formatValue(mixed $value, ?KeyConvert $keyConvert): mixed
-    {
-        $type = gettype($value);
-        if ($value === null) {
+        if($value === null) {
             return null;
         }
+        $structUnderlyingDataType = StructDataTypeHelper::findUnderlyingDataTypeFromValue($value);
+        $formattedValue = match ($structUnderlyingDataType) {
+            StructUnderlyingDataType::Boolean,
+            StructUnderlyingDataType::Integer,
+            StructUnderlyingDataType::Float,
+            StructUnderlyingDataType::String => $value,
+            StructUnderlyingDataType::Enum,
+            StructUnderlyingDataType::EnumString,
+            StructUnderlyingDataType::EnumInt => $this->formatEnum($structDataTypeCollection, $value),
+            StructUnderlyingDataType::Array,
+            StructUnderlyingDataType::ArrayList =>$this->formatArray($structDataTypeCollection, $value, $structElementArray),
+            StructUnderlyingDataType::DateTime => $this->formatDateTime($structDataTypeCollection, $value),
+            StructUnderlyingDataType::DataType => $this->formatDataType($structDataTypeCollection, $value),
+            StructUnderlyingDataType::Struct => $this->formatStruct($structDataTypeCollection, $value),
+        };
+        return $formattedValue;
+    }
 
-        if (
-            $type === 'boolean' ||
-            $type === 'integer' ||
-            $type === 'double' ||
-            $type === 'string'
-        ) {
+    protected function formatArray(StructDataTypeCollection $structDataTypeCollection, array $value, StructElementArray $structElementArray): array
+    {
+        if($structElementArray->structUnderlyingArrayType === StructUnderlyingArrayType::ArrayPassThrough) {
             return $value;
         }
-        return $this->formatComplexValue($value, $keyConvert);
-    }
-
-    protected function formatComplexValue(mixed $value, ?KeyConvert $keyConvert): mixed
-    {
-        if (is_array($value)) {
-            return $this->formatArrayValue($value, $keyConvert);
-        }
-        if ($value instanceof UnitEnum) {
-            return FormatHelper::formatEnum($value);
-        }
-        if (is_object($value)) {
-            return $this->formatObjectValue($value, $keyConvert);
-        }
-        throw new SerializeException(1724534215, null, 'The type of value is not supported');
-    }
-
-    /**
-     * @param array<mixed> $value
-     * @return array<mixed>
-     */
-    protected function formatArrayValue(array $value, ?KeyConvert $keyConvert): array
-    {
+        $output = [];
         $isList = array_is_list($value);
-        $values = [];
         foreach ($value as $key => $item) {
-            if ($isList) {
-                $values[] = $this->formatValue($item, $keyConvert);
+            $formattedValue = $this->formatValue($structElementArray->structDataTypeCollection, $item);
+            if($isList === true) {
+                $output[] = $formattedValue;
             } else {
-                $values[$key] = $this->formatValue($item, $keyConvert);
+                $output[$key] = $formattedValue;
             }
         }
-        return $values;
+        return $output;
     }
 
-    /**
-     * @param object $value
-     * @return array<mixed>|string
-     */
-    protected function formatObjectValue(object $value, ?KeyConvert $keyConvert): array|string
+    protected function formatStruct(StructDataTypeCollection $structDataTypeCollection, StructInterface $value): array
     {
-        if (is_a($value, DateTimeInterface::class)) {
-            return FormatHelper::formatDateTime($value);
+        $formattedValue = $this->_serializeStruct($value);
+        $formattedValue = $this->formatUnclear($structDataTypeCollection, $formattedValue, $value::class);
+        return $formattedValue;
+    }
+
+    protected function formatDataType(StructDataTypeCollection $structDataTypeCollection, DataTypeInterface $value): string|array
+    {
+        $formattedValue = $value->serializeToString();
+        $formattedValue = $this->formatUnclear($structDataTypeCollection, $formattedValue, $value::class);
+        return $formattedValue;
+    }
+
+    protected function formatEnum(StructDataTypeCollection $structDataTypeCollection, UnitEnum $value): string|int|array
+    {
+        $formattedValue = $value->name;
+        if ($value instanceof BackedEnum) {
+            $formattedValue = $value->value;
         }
-        if (is_a($value, StructInterface::class)) {
-            return $this->_serialize($value, $keyConvert);
+        $formattedValue = $this->formatUnclear($structDataTypeCollection, $formattedValue, UnitEnum::class);
+        return $formattedValue;
+    }
+
+    protected function formatDateTime(StructDataTypeCollection $structDataTypeCollection, DateTimeInterface $value): string|array
+    {
+        $formattedValue = $value->format('c');
+        $formattedValue = $this->formatUnclear($structDataTypeCollection, $formattedValue, DateTimeInterface::class);
+        return $formattedValue;
+    }
+
+    protected function formatUnclear(StructDataTypeCollection $structDataTypeCollection, string|int|array $value, string $className): string|int|array
+    {
+        if(is_string($value) === true) {
+            $formattedValue = $this->formatUnclearType($structDataTypeCollection, $value, $className, 'unclearString');
+            return $formattedValue;
         }
-        if (is_a($value, DataTypeInterface::class)) {
-            try {
-                return $value->serializeToString();
-            } catch (\Throwable $exception) {
-                throw new SerializeException(1724533985, $value::class, 'Can not serialize DataType', $exception);
-            }
+        if(is_int($value) === true) {
+            $formattedValue = $this->formatUnclearType($structDataTypeCollection, $value, $className, 'unclearInt');
+            return $formattedValue;
         }
-        throw new SerializeException(1724533843, $value::class, 'The type of value is not supported');
+        $formattedValue = $this->formatUnclearType($structDataTypeCollection, $value, $className, 'unclearArray');
+        return $formattedValue;
+    }
+
+    protected function formatUnclearType(StructDataTypeCollection $structDataTypeCollection, string|int|array $value, string $className, string $type): string|int|array
+    {
+        if($structDataTypeCollection->$type === false) {
+            return $value;
+        }
+        return [
+            'structType' => $className,
+            'value' => $value,
+        ];
     }
 }

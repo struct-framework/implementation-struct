@@ -15,7 +15,6 @@ readonly class StructDataType
     public function __construct(
         public StructUnderlyingDataType $structUnderlyingDataType,
         public ?string                  $className = null,
-        public ?bool                    $isClearlyDefined = false,
     ) {
     }
 }

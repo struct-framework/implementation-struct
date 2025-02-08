@@ -22,7 +22,7 @@ class StructSerializeUtility
     public static function serialize(StructInterface $structure, ?KeyConvert $keyConvert = null): array
     {
         $serializeUtility = new SerializeUtility();
-        return $serializeUtility->serialize($structure, $keyConvert);
+        return $serializeUtility->serializeStruct($structure, $keyConvert);
     }
 
     /**

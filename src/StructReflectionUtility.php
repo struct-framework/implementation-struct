@@ -4,26 +4,31 @@ declare(strict_types=1);
 
 namespace Struct\Struct;
 
-use Exception\Unexpected\UnexpectedException;
 use Struct\Attribute\ArrayKeyList;
 use Struct\Attribute\ArrayList;
 use Struct\Attribute\ArrayPassThrough;
+use Struct\Attribute\DefaultValue;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidStructException;
-use Struct\Reflection\Internal\Struct\ObjectSignature\Parts\Attribute;
 use Struct\Reflection\Internal\Struct\ObjectSignature\Parts\NamedType;
 use Struct\Reflection\Internal\Struct\ObjectSignature\Property;
+use Struct\Reflection\Internal\Struct\ObjectSignature\Value;
 use Struct\Reflection\MemoryCache;
 use Struct\Reflection\ReflectionUtility;
+use Struct\Struct\Factory\DataTypeFactory;
 use Struct\Struct\Internal\Helper\StructDataTypeHelper;
 use Struct\Struct\Internal\Struct\StructSignature;
 use Struct\Struct\Internal\Struct\StructSignature\DataType\StructDataType;
-use Struct\Struct\Internal\Struct\StructSignature\StructArrayType;
-use Struct\Struct\Internal\Struct\StructSignature\StructArrayTypeOption;
-use Struct\Struct\Internal\Struct\StructSignature\StructElement;
+use Struct\Struct\Internal\Struct\StructSignature\DataType\StructUnderlyingArrayType;
 use Struct\Struct\Internal\Struct\StructSignature\DataType\StructUnderlyingDataType;
+use Struct\Struct\Internal\Struct\StructSignature\DataType\UnclearDataType;
+use Struct\Struct\Internal\Struct\StructSignature\StructElementArray;
+use Struct\Struct\Internal\Struct\StructSignature\StructElement;
+use Struct\Struct\Internal\Struct\StructSignature\DataType\StructDataTypeCollection;
+use Struct\Struct\Internal\Utility\AttributeUtility;
 use Struct\Struct\Internal\Utility\StructValidatorUtility;
 use Struct\Struct\Internal\Validator\PropertyValidator;
+use function PHPUnit\Framework\matches;
 
 class StructReflectionUtility
 {
@@ -79,13 +84,15 @@ class StructReflectionUtility
 
     protected static function _buildElement(Property $property): StructElement
     {
-        $structDataTypes = self::_buildStructDataTypes($property->parameter->types);
-        $structArrayType =  self::_buildStructArrayType($property, $structDataTypes);
+        $structDataTypeCollection = self::_buildStructDataTypeCollectionFromNamedTypes($property->parameter->types);
+        $structArrayType =  self::_buildStructArrayType($property, $structDataTypeCollection->structDataTypes);
+        $defaultValue = self::_buildDefaultValue($property, $structDataTypeCollection->structDataTypes);
+
         $element = new StructElement(
             $property->parameter->name,
             $property->parameter->isAllowsNull,
-            null,
-            $structDataTypes,
+            $defaultValue,
+            $structDataTypeCollection,
             $structArrayType,
         );
         return $element;
@@ -93,48 +100,73 @@ class StructReflectionUtility
 
 
     /**
+     * @param array<StructDataType> $structDataTypes
+     */
+    protected static function _buildDefaultValue(Property $property, array $structDataTypes): ?Value
+    {
+        if ($property->parameter->defaultValue !== null) {
+            return $property->parameter->defaultValue;
+        }
+        $defaultValue = AttributeUtility::findFirstAttributeArgumentAsString($property, DefaultValue::class);
+        if($defaultValue === null) {
+            return null;
+        }
+        foreach ($structDataTypes as $structDataType) {
+            if($structDataType->structUnderlyingDataType === StructUnderlyingDataType::DateTime) {
+                try {
+                    $dateTime = new \DateTimeImmutable($defaultValue);
+                    return new Value($dateTime);
+                } catch (\Throwable) {}
+            }
+            if($structDataType->structUnderlyingDataType === StructUnderlyingDataType::DataType) {
+                $className = $structDataType->className;
+                $dataType = DataTypeFactory::create($className, $defaultValue);
+                return new Value($dataType);
+            }
+        }
+        return null;
+    }
+
+
+    /**
      * @param array<StructDataType>$structDataTypes
      */
-    protected static function _buildStructArrayType(Property $property, array $structDataTypes): ?StructArrayType
+    protected static function _buildStructArrayType(Property $property, array $structDataTypes): ?StructElementArray
     {
         if(self::_hasArrayDataType($structDataTypes) === false) {
             return null;
         }
-        $arrayPassThroughAttribute = self::_findFirstAttribute($property, ArrayPassThrough::class);
+        $arrayPassThroughAttribute = AttributeUtility::findFirstAttribute($property, ArrayPassThrough::class);
         if($arrayPassThroughAttribute !== null) {
-            $structArrayType = new StructArrayType(
-                StructArrayTypeOption::ArrayPassThrough,
+            $structArrayType = new StructElementArray(
+                StructUnderlyingArrayType::ArrayPassThrough,
                 null,
             );
             return $structArrayType;
         }
-        $arrayListAttribute = self::_findFirstAttribute($property, ArrayList::class);
-        $arrayKeyListAttribute = self::_findFirstAttribute($property, ArrayKeyList::class);
+        $arrayListAttribute = AttributeUtility::findFirstAttributeArgumentAsArrayOrString($property, ArrayList::class);
+        $arrayKeyListAttribute = AttributeUtility::findFirstAttributeArgumentAsArrayOrString($property, ArrayKeyList::class);
         $structArrayTypeOption = null;
         $arguments = [];
         if($arrayListAttribute !== null ) {
-            $structArrayTypeOption = StructArrayTypeOption::ArrayList;
-            $arguments = $arrayListAttribute->arguments;
+            $structArrayTypeOption = StructUnderlyingArrayType::ArrayList;
+            $arguments = $arrayListAttribute;
         }
         if($arrayKeyListAttribute !== null ) {
-            $structArrayTypeOption = StructArrayTypeOption::ArrayKeyList;
-            $arguments = $arrayKeyListAttribute->arguments;
+            $structArrayTypeOption = StructUnderlyingArrayType::ArrayKeyList;
+            $arguments = $arrayKeyListAttribute;
         }
         if($structArrayTypeOption === null) {
             throw new InvalidStructException(1739035381, 'The array is undefined');
         }
-        if(count($arguments) === 0) {
-            throw new UnexpectedException();
+        $dataTypes = $arguments;
+        if(is_string($arguments) === true) {
+            $dataTypes = [$arguments];
         }
-        $firstArgument = $arguments[0];
-        $dataTypes = $firstArgument;
-        if(is_string($firstArgument) === true) {
-            $dataTypes = [$firstArgument];
-        }
-        $structDataTypes = self::_buildStructDataTypeByTypeString($dataTypes);
-        $structArrayType = new StructArrayType(
+        $structDataTypeCollection = self::_buildStructDataTypeCollection($dataTypes);
+        $structArrayType = new StructElementArray(
             $structArrayTypeOption,
-            $structDataTypes,
+            $structDataTypeCollection,
         );
         return $structArrayType;
     }
@@ -152,83 +184,77 @@ class StructReflectionUtility
         return false;
     }
 
-    protected static function _findFirstAttribute(Property $property, string $attributeName): ?Attribute
-    {
-        $attributes = self::_findAttributes($property, $attributeName);
-        if(count($attributes) === 0) {
-            return null;
-        }
-        return $attributes[0];
-    }
-
-    /**
-     * @return array<Attribute>
-     */
-    protected static function _findAttributes(Property $property, string $attributeName): array
-    {
-        $attributes = [];
-        foreach ($property->parameter->attributes as $attribute) {
-            if ($attribute->name === $attributeName) {
-                $attributes[] = $attribute;
-            }
-        }
-        return $attributes;
-    }
 
     /**
      * @param array<NamedType> $namedTypes
-     * @return array<StructDataType>
      */
-    protected static function _buildStructDataTypes(array $namedTypes): array
+    protected static function _buildStructDataTypeCollectionFromNamedTypes(array $namedTypes): StructDataTypeCollection
     {
         $dataTypes = [];
         foreach ($namedTypes as $type) {
             $dataTypes[] = $type->dataType;
         }
-        $structDataTypes = self::_buildStructDataTypeByTypeString($dataTypes);
-        return $structDataTypes;
+        $structDataTypeCollection = self::_buildStructDataTypeCollection($dataTypes);
+        return $structDataTypeCollection;
+    }
+
+
+    /**
+     * @param array<string> $dataTypes
+     */
+    protected static function _buildStructDataTypeCollection(array $dataTypes): StructDataTypeCollection
+    {
+        $structDataTypes = self::_buildStructDataTypes($dataTypes);
+        $unclearIntCount = 0;
+        $unclearStringCount = 0;
+        $unclearArrayCount = 0;
+        foreach ($structDataTypes as $structDataType) {
+            $unclearType = StructDataTypeHelper::findUnclearType($structDataType->structUnderlyingDataType);
+            match ($unclearType) {
+                null => 0,
+                UnclearDataType::Integer => $unclearIntCount++,
+                UnclearDataType::String=> $unclearStringCount++,
+                UnclearDataType::Array => $unclearArrayCount++,
+            };
+        }
+        $unclearInt = $unclearIntCount > 1;
+        $unclearString = $unclearStringCount > 1;
+        $unclearArray = $unclearArrayCount > 1;
+        $structDataTypeCollection = new StructDataTypeCollection(
+            $unclearInt,
+            $unclearString,
+            $unclearArray,
+            $structDataTypes,
+        );
+        return $structDataTypeCollection;
     }
 
     /**
      * @param array<string> $dataTypes
      * @return array<StructDataType>
      */
-    protected static function _buildStructDataTypeByTypeString(array $dataTypes): array
+    protected static function _buildStructDataTypes(array $dataTypes): array
     {
-        $phpDataTypeCounts = [];
-        foreach ($dataTypes as $dataType) {
-            $underlyingDataType = StructDataTypeHelper::findUnderlyingDataType($dataType);
-            $phpDataType = StructDataTypeHelper::findPhpDataType($underlyingDataType);
-            $key = $phpDataType->name;
-            if (array_key_exists($key, $phpDataTypeCounts) === false) {
-                $phpDataTypeCounts[$key] = 0;
-            }
-            $phpDataTypeCounts[$key]++;
-        }
-
         $structDataTypes = [];
         foreach ($dataTypes as $dataType) {
-            $underlyingDataType = StructDataTypeHelper::findUnderlyingDataType($dataType);
-            $phpDataType = StructDataTypeHelper::findPhpDataType($underlyingDataType);
-            $key = $phpDataType->name;
-
-            $className = null;
-            $isClearlyDefined = null;
-            if(self::_addClassName($underlyingDataType) === true) {
-                $className = $dataType;
-                $isClearlyDefined = true;
-                if($phpDataTypeCounts[$key] > 1) {
-                    $isClearlyDefined = false;
-                }
-            }
-            $structDataType = new StructDataType(
-                $underlyingDataType,
-                $className,
-                $isClearlyDefined
-            );
-            $structDataTypes[] = $structDataType;
+            $structDataTypes[] = self::_buildStructDataType($dataType);
         }
         return $structDataTypes;
+    }
+
+
+
+    protected static function _buildStructDataType(string $dataType): StructDataType
+    {
+        $underlyingDataType = StructDataTypeHelper::findUnderlyingDataType($dataType);
+        if(self::_addClassName($underlyingDataType) === true) {
+            $className = $dataType;
+        }
+        $structDataType = new StructDataType(
+            $underlyingDataType,
+            $className,
+        );
+        return $structDataType;
     }
 
     protected static function _addClassName(StructUnderlyingDataType $underlyingDataType): bool

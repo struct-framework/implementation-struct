@@ -7,12 +7,9 @@ namespace Struct\Struct\Internal\Struct\StructSignature\DataType;
 /**
  * @internal
  */
-enum PhpDataType
+enum UnclearDataType
 {
-    case Boolean;
     case Integer;
-    case Float;
     case String;
     case Array;
-    case ArrayList;
 }

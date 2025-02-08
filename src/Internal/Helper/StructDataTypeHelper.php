@@ -9,8 +9,7 @@ use IntBackedEnum;
 use LogicException;
 use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructInterface;
-use Struct\Reflection\Internal\Struct\ObjectSignature\Parts\NamedType;
-use Struct\Struct\Internal\Struct\StructSignature\DataType\PhpDataType;
+use Struct\Struct\Internal\Struct\StructSignature\DataType\UnclearDataType;
 use Struct\Struct\Internal\Struct\StructSignature\DataType\StructUnderlyingDataType;
 use UnitEnum;
 
@@ -44,21 +43,21 @@ class StructDataTypeHelper
         throw new LogicException('The type is not supported', 1739024555);
     }
 
-    public static function findPhpDataType(StructUnderlyingDataType $structBaseDataType): PhpDataType
+    public static function findUnclearType(StructUnderlyingDataType $structBaseDataType): ?UnclearDataType
     {
         $phpDataType = match ($structBaseDataType) {
-            StructUnderlyingDataType::Boolean => PhpDataType::Boolean,
-            StructUnderlyingDataType::Integer,
-            StructUnderlyingDataType::EnumInt => PhpDataType::Integer,
-            StructUnderlyingDataType::Float => PhpDataType::Float,
+            StructUnderlyingDataType::Boolean,
+            StructUnderlyingDataType::Array,
+            StructUnderlyingDataType::Float => null,
             StructUnderlyingDataType::String,
             StructUnderlyingDataType::DateTime,
             StructUnderlyingDataType::DataType,
             StructUnderlyingDataType::Enum,
-            StructUnderlyingDataType::EnumString => PhpDataType::String,
-            StructUnderlyingDataType::Array => PhpDataType::Array,
+            StructUnderlyingDataType::EnumString => UnclearDataType::String,
             StructUnderlyingDataType::ArrayList,
-            StructUnderlyingDataType::Struct => PhpDataType::ArrayList,
+            StructUnderlyingDataType::Struct => UnclearDataType::Array,
+            StructUnderlyingDataType::Integer,
+            StructUnderlyingDataType::EnumInt => UnclearDataType::Integer,
         };
         return $phpDataType;
     }
@@ -107,13 +106,22 @@ class StructDataTypeHelper
         if ($dataType === 'bool') {
             return StructUnderlyingDataType::Boolean;
         }
+        if ($dataType === 'boolean') {
+            return StructUnderlyingDataType::Boolean;
+        }
         if ($dataType === 'string') {
             return StructUnderlyingDataType::String;
         }
         if ($dataType === 'int') {
             return StructUnderlyingDataType::Integer;
         }
+        if ($dataType === 'integer') {
+            return StructUnderlyingDataType::Integer;
+        }
         if ($dataType === 'float') {
+            return StructUnderlyingDataType::Float;
+        }
+        if ($dataType === 'double') {
             return StructUnderlyingDataType::Float;
         }
         return null;
