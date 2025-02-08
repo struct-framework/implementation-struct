@@ -135,36 +135,4 @@ class StructHashUtility
         return $propertyNames;
     }
 
-    protected static function findDataType(mixed $value): StructBaseDataType
-    {
-        $type = gettype($value);
-        if ($value instanceof StructInterface) {
-            return StructBaseDataType::Struct;
-        }
-        if ($value instanceof DateTimeInterface) {
-            return StructBaseDataType::DateTime;
-        }
-        if ($value instanceof UnitEnum) {
-            return StructBaseDataType::Enum;
-        }
-        if ($value instanceof DataTypeInterface) {
-            return StructBaseDataType::DataType;
-        }
-        if ($type === 'array') {
-            return StructBaseDataType::Array;
-        }
-        if ($type === 'boolean') {
-            return StructBaseDataType::Boolean;
-        }
-        if ($type === 'integer') {
-            return StructBaseDataType::Integer;
-        }
-        if ($type === 'double') {
-            return StructBaseDataType::Float;
-        }
-        if ($type === 'string') {
-            return StructBaseDataType::String;
-        }
-        throw new UnexpectedException(1701724351);
-    }
 }

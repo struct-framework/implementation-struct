@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Struct\Struct\Internal\Struct\StructSignature;
 
 use Struct\Attribute\ArrayList;
+use Struct\Struct\Internal\Struct\StructSignature\DataType\StructDataType;
 
 /**
  * @internal
@@ -17,7 +18,7 @@ readonly class StructArrayType
     public function __construct(
         public StructArrayTypeOption $structArrayTypeOption,
         #[ArrayList(StructDataType::class)]
-        public array $structDataTypes,
+        public ?array $structDataTypes,
     ) {
     }
 }

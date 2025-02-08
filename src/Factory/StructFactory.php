@@ -98,11 +98,12 @@ class StructFactory
     protected static function buildValue(StructElement $structElement, null|array|object $data): ?Value
     {
         $structDataType = $structElement->structDataTypes[0];
-        $valueFromData = self::_findValueFromData($structElement, $data);
-        if($valueFromData !== null) {
-            return $valueFromData;
+        $valueData = self::_findValueDataFromData($structElement, $data);
+        $value = self::_findValueFromValueData($structElement, $valueData);
+        if($value !== null) {
+            return $value;
         }
-        $value = match ($structDataType->structBaseDataType) {
+        $defaultValue = match ($structDataType->structUnderlyingDataType) {
             StructBaseDataType::Boolean,
             StructBaseDataType::Integer,
             StructBaseDataType::Float,
@@ -110,14 +111,14 @@ class StructFactory
             StructBaseDataType::Enum,
             StructBaseDataType::DateTime,
             StructBaseDataType::DataType => $structElement->defaultValue,
-            StructBaseDataType::Array => self::_buildValueArray($structElement),
-            StructBaseDataType::Struct => self::_buildValueStruct($structElement, $data),
+            StructBaseDataType::Array => self::_buildValueArray($structElement, $valueData),
+            StructBaseDataType::Struct => self::_buildValueStruct($structElement, $valueData),
         };
-        return $value;
+        return $defaultValue;
     }
 
 
-    protected static function _findValueFromData(StructElement $structElement, null|array|object $data): ?Value
+    protected static function _findValueDataFromData(StructElement $structElement, null|array|object $data): mixed
     {
         $name = $structElement->name;
         $valueData = null;
@@ -126,16 +127,23 @@ class StructFactory
                 $valueData = $data[$name];
             }
         }
+        return $valueData;
+
+
+    }
+
+    protected static function _findValueFromValueData(StructElement $structElement, mixed $valueData): ?Value
+    {
         $value = null;
         if($valueData !== null) {
             $value = new Value($valueData);
         }
-        $valueFromData = ValueUtility::processValue($structElement->structDataTypes, $value);
+        $valueFromData = ValueUtility::processValue($structElement, $value);
         return $valueFromData;
     }
 
 
-    protected static function _buildValueArray(StructElement $structElement): Value
+    protected static function _buildValueArray(StructElement $structElement, null|array|object $data): Value
     {
         if ($structElement->isAllowsNull === true) {
             return new Value(null);

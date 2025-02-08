@@ -10,8 +10,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Struct\\Struct\\": "src",
-            "Struct\\Struct\\Internal\\": "src-internal"
+            "Struct\\Struct\\": "src"
         }
     },
     "conflict": {

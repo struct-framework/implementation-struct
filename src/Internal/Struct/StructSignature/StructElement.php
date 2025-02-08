@@ -6,6 +6,7 @@ namespace Struct\Struct\Internal\Struct\StructSignature;
 
 use Struct\Attribute\ArrayList;
 use Struct\Reflection\Internal\Struct\ObjectSignature\Value;
+use Struct\Struct\Internal\Struct\StructSignature\DataType\StructDataType;
 
 /**
  * @internal
