@@ -62,7 +62,7 @@ class FormatHelper
      * @param  class-string<T> $typeClassName
      * @return T
      */
-    public static function buildEnumInt(StructValueType $structValueType): \StringBackedEnum
+    public static function buildEnumInt(StructValueType $structValueType): \BackedEnum
     {
         $className = $structValueType->className;
         $dataValue = $structValueType->rawDataValue;
@@ -74,7 +74,7 @@ class FormatHelper
      * @param  class-string<T> $typeClassName
      * @return T
      */
-    public static function buildEnumString(StructValueType $structValueType): \StringBackedEnum
+    public static function buildEnumString(StructValueType $structValueType): \BackedEnum
     {
         $className = $structValueType->className;
         $dataValue = $structValueType->rawDataValue;

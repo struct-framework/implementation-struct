@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Struct\Struct\Internal\Helper;
 
 use DateTimeInterface;
-use IntBackedEnum;
 use LogicException;
 use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructInterface;
@@ -77,10 +76,10 @@ class StructDataTypeHelper
 
     protected static function checkForClassType(object|string $dataType): ?StructUnderlyingDataType
     {
-        if (is_a($dataType, IntBackedEnum::class, true) === true) {
-            return StructUnderlyingDataType::EnumInt;
-        }
-        if (is_a($dataType, \StringBackedEnum::class, true) === true) {
+        if (is_a($dataType, \BackedEnum::class, true) === true) {
+            if(is_int($dataType::cases()[0]->value) === true) {
+                return StructUnderlyingDataType::EnumInt;
+            }
             return StructUnderlyingDataType::EnumString;
         }
         if (is_a($dataType, UnitEnum::class, true) === true) {

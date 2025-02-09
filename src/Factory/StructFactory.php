@@ -10,8 +10,11 @@ use Struct\Reflection\Internal\Struct\ObjectSignature\Value;
 use Struct\Struct\Internal\Helper\FormatHelper;
 use Struct\Struct\Internal\Struct\StructSignature;
 use Struct\Struct\Internal\Struct\StructSignature\DataType\StructUnderlyingDataType;
+use Struct\Struct\Internal\Struct\StructSignature\DataType\StructValueType;
 use Struct\Struct\Internal\Struct\StructSignature\StructElement;
-use Struct\Struct\Internal\Utility\UnserializeUtility;
+use Struct\Struct\Internal\Struct\StructSignature\StructElementArray;
+use Struct\Struct\Internal\Struct\StructSignature\DataType\StructUnderlyingArrayType;
+use Struct\Struct\Internal\Utility\DeserializationUtility;
 use Struct\Struct\StructReflectionUtility;
 
 class StructFactory
@@ -110,7 +113,7 @@ class StructFactory
 
     protected static function _processValue(StructElement $structElement, null|array|object $data): ?Value
     {
-        $dataValue = UnserializeUtility::findValue($data, $structElement->name);
+        $dataValue = DeserializationUtility::findValue($data, $structElement->name);
         if ($dataValue === null) {
             if ($structElement->defaultValue !== null) {
                 return  $structElement->defaultValue;
@@ -120,24 +123,51 @@ class StructFactory
             }
             return null;
         }
-        $processedValue = UnserializeUtility::processValue($dataValue->valueData, $structElement->structDataTypeCollection);
+        $processedValue = DeserializationUtility::processValue($dataValue->valueData, $structElement->structDataTypeCollection);
+        $value = self::_postProcessValue($processedValue, $structElement->structElementArray);
+        return $value;
+    }
+
+    protected static function _postProcessValue(?StructValueType $processedValue, ?StructElementArray $structElementArray): ?Value
+    {
         if ($processedValue === null) {
             return null;
         }
-        if ($processedValue->value) {
-            return $processedValue->value;
+        if (
+            $processedValue->structUnderlyingDataType === StructUnderlyingDataType::Array ||
+            $processedValue->structUnderlyingDataType === StructUnderlyingDataType::ArrayList
+        ) {
+            $array = self::_processArray($processedValue, $structElementArray);
+            return new Value($array);
         }
         if ($processedValue->structUnderlyingDataType === StructUnderlyingDataType::Struct) {
             $struct = self::create($processedValue->className, $processedValue->rawDataValue);
             return new Value($struct);
         }
-        if ($processedValue->structUnderlyingDataType === StructUnderlyingDataType::Array) {
-            return new Value([]);
+        $value = FormatHelper::buildValue($processedValue);
+        return $value;
+    }
+
+
+
+    protected static function _processArray(StructValueType $structValueType, StructElementArray $structElementArray): ?array
+    {
+        if($structElementArray->structUnderlyingArrayType === StructUnderlyingArrayType::ArrayPassThrough) {
+            if(is_array($structValueType->rawDataValue) === true) {
+                return $structValueType->rawDataValue;
+            }
+            return null;
         }
-        if ($processedValue->structUnderlyingDataType === StructUnderlyingDataType::ArrayList) {
-            return new Value([]);
+        $processedArray = [];
+        foreach ($structValueType->rawDataValue as $key => $value) {
+            $processedValue =  DeserializationUtility::processValue($value, $structElementArray->structDataTypeCollection);
+            $postProcessedValue = self::_postProcessValue($processedValue,null);
+            if($structValueType->structUnderlyingDataType === StructUnderlyingDataType::ArrayList) {
+                $processedArray[] = $postProcessedValue->valueData;
+            } else {
+                $processedArray[$key] = $postProcessedValue->valueData;
+            }
         }
-        $valueData = FormatHelper::buildStructDataType($processedValue);
-        return new Value($valueData);
+        return $processedArray;
     }
 }

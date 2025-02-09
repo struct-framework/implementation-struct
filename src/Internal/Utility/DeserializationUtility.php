@@ -14,7 +14,7 @@ use Struct\Struct\Internal\Struct\StructSignature\DataType\StructValueType;
 /**
  * @internal
  */
-class UnserializeUtility
+class DeserializationUtility
 {
     public static function processValue(mixed $valueData, StructDataTypeCollection $structDataTypeCollection): ?StructValueType
     {
@@ -56,11 +56,11 @@ class UnserializeUtility
         }
         if (is_bool($valueData) === true) {
             $structUnderlyingDataType = StructUnderlyingDataType::Boolean;
-            $value = new Value(null);
+            $value = new Value($valueData);
         }
         if (is_float($valueData) === true) {
             $structUnderlyingDataType = StructUnderlyingDataType::Float;
-            $value = new Value(null);
+            $value = new Value($valueData);
         }
         if ($value === null) {
             return null;

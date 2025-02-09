@@ -27,7 +27,7 @@ use Struct\Struct\Internal\Struct\StructSignature\StructElement;
 use Struct\Struct\Internal\Struct\StructSignature\StructElementArray;
 use Struct\Struct\Internal\Utility\AttributeUtility;
 use Struct\Struct\Internal\Utility\StructValidatorUtility;
-use Struct\Struct\Internal\Utility\UnserializeUtility;
+use Struct\Struct\Internal\Utility\DeserializationUtility;
 use Struct\Struct\Internal\Validator\PropertyValidator;
 
 class StructReflectionUtility
@@ -109,7 +109,7 @@ class StructReflectionUtility
         if ($defaultValue === null) {
             return null;
         }
-        $structValueType = UnserializeUtility::processValue($defaultValue, $structDataTypeCollection);
+        $structValueType = DeserializationUtility::processValue($defaultValue, $structDataTypeCollection);
         $value = FormatHelper::buildValue($structValueType);
         return $value;
     }
@@ -250,10 +250,10 @@ class StructReflectionUtility
             StructUnderlyingDataType::Boolean,
             StructUnderlyingDataType::Float,
             StructUnderlyingDataType::DateTime,
-            StructUnderlyingDataType::EnumString,
-            StructUnderlyingDataType::EnumInt,
             StructUnderlyingDataType::ArrayList,
             StructUnderlyingDataType::String => false,
+            StructUnderlyingDataType::EnumString,
+            StructUnderlyingDataType::EnumInt,
             StructUnderlyingDataType::DataType,
             StructUnderlyingDataType::Enum,
             StructUnderlyingDataType::Struct => true,
