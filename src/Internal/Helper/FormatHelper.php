@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Struct\Struct\Internal\Helper;
 
 use BackedEnum;
-use DateTime;
+use DateTimeImmutable;
 use DateTimeInterface;
-use Exception;
-use function gettype;
-use function is_string;
-use Struct\Exception\TransformException;
-use Struct\Reflection\Internal\Struct\ObjectSignature\Parts\NamedType;
+use Exception\Unexpected\UnexpectedException;
+use Struct\Contracts\DataTypeInterface;
+use Struct\Reflection\Internal\Struct\ObjectSignature\Value;
+use Struct\Struct\Factory\DataTypeFactory;
+use Struct\Struct\Internal\Struct\StructSignature\DataType\StructUnderlyingDataType;
+use Struct\Struct\Internal\Struct\StructSignature\DataType\StructValueType;
 use UnitEnum;
 
 /**
@@ -19,65 +20,109 @@ use UnitEnum;
  */
 class FormatHelper
 {
-    public static function formatDateTime(DateTimeInterface $dateTime): string
+    public static function formatDateTime(DateTimeInterface $value): string
     {
-        return $dateTime->format('c');
+        return $value->format('c');
     }
 
-    public static function formatEnum(UnitEnum $enum): mixed
+    public static function formatEnum(UnitEnum $value): string|int
     {
-        if ($enum instanceof BackedEnum) {
-            return $enum->value;
+        if ($value instanceof BackedEnum) {
+            return $value->value;
         }
-        return $enum->name;
+        return $value->name;
     }
 
-    public static function formatBuildIn(mixed $value, NamedType $toType): mixed
+    public static function formatDataType(DataTypeInterface $value): string
     {
-        $dataType = $toType->dataType;
-        $valueType = gettype($value);
-        switch ($valueType) {
-            case 'string':
-                return self::parseString($value, $dataType);
-            case 'boolean':
-                if ($dataType === 'bool') {
-                    return $value;
-                }
-                break;
-            case 'integer':
-                if ($dataType === 'int') {
-                    return $value;
-                }
-                if ($dataType === 'float') {
-                    return (float)$value;  // @phpstan-ignore-line
-                }
-                break;
-            case 'double':
-                if ($dataType === 'float') {
-                    return $value;
-                }
-                break;
-            default:
-                throw new TransformException('Can not parse type <' . $valueType . '>', 1675967897);
-        }
-        throw new TransformException('Can not transform to type <' . $dataType . '>', 1675967900);
+        $formattedValue = $value->serializeToString();
+        return $formattedValue;
     }
 
-    protected static function parseString(mixed $value, string $type): string|DateTimeInterface
+    public static function buildDateTime(StructValueType $structValueType): DateTimeImmutable
     {
-        if (is_string($value) === false) {
-            throw new TransformException('The value is not an string', 1675967906);
-        }
-        if (is_a($type, DateTimeInterface::class, true)) {
-            try {
-                return new DateTime($value);
-            } catch (Exception $exception) {
-                throw new TransformException('String <' . $value . '> can not be parsed as DateTime', 1675967909, $exception);
+        $dataValue = $structValueType->rawDataValue;
+        return new DateTimeImmutable($dataValue);
+    }
+
+    /**
+     * @template T of DataTypeInterface
+     * @param  class-string<T> $typeClassName
+     * @return T
+     */
+    public static function buildDataType(StructValueType $structValueType): DataTypeInterface
+    {
+        $className = $structValueType->className;
+        $dataValue = $structValueType->rawDataValue;
+        return DataTypeFactory::create($className, $dataValue);
+    }
+
+    /**
+     * @template T of \StringBackedEnum
+     * @param  class-string<T> $typeClassName
+     * @return T
+     */
+    public static function buildEnumInt(StructValueType $structValueType): \StringBackedEnum
+    {
+        $className = $structValueType->className;
+        $dataValue = $structValueType->rawDataValue;
+        return $className::tryFrom($dataValue);
+    }
+
+    /**
+     * @template T of \StringBackedEnum
+     * @param  class-string<T> $typeClassName
+     * @return T
+     */
+    public static function buildEnumString(StructValueType $structValueType): \StringBackedEnum
+    {
+        $className = $structValueType->className;
+        $dataValue = $structValueType->rawDataValue;
+        return $className::tryFrom($dataValue);
+    }
+
+    /**
+     * @template T of \UnitEnum
+     * @param  class-string<T> $typeClassName
+     * @return T
+     */
+    public static function buildEnum(StructValueType $structValueType): \UnitEnum
+    {
+        $className = $structValueType->className;
+        $dataValue = $structValueType->rawDataValue;
+        foreach ($className::cases() as $case) {
+            if ($case->name === $dataValue) {
+                return $case;
             }
         }
-        if ($type === 'string') {
-            return $value;
+        throw new UnexpectedException(1739092984);
+    }
+
+    public static function buildStructDataType(StructValueType $structValueType): mixed
+    {
+        $result = match ($structValueType->structUnderlyingDataType) {
+            StructUnderlyingDataType::String,
+            StructUnderlyingDataType::Boolean,
+            StructUnderlyingDataType::Integer,
+            StructUnderlyingDataType::Float      => $structValueType->rawDataValue,
+            StructUnderlyingDataType::Enum       => self::buildEnum($structValueType),
+            StructUnderlyingDataType::EnumString => self::buildEnumString($structValueType),
+            StructUnderlyingDataType::EnumInt    => self::buildEnumInt($structValueType),
+            StructUnderlyingDataType::DateTime   => self::buildDateTime($structValueType),
+            StructUnderlyingDataType::DataType   => self::buildDataType($structValueType),
+            StructUnderlyingDataType::Array,
+            StructUnderlyingDataType::ArrayList,
+            StructUnderlyingDataType::Struct => throw new \Exception('To be implemented'),
+        };
+        return $result;
+    }
+
+    public static function buildValue(StructValueType $structValueType): ?Value
+    {
+        if ($structValueType->value !== null) {
+            return $structValueType->value;
         }
-        throw new TransformException('Type of property can not be transformed', 1675967912);
+        $dataValue = self::buildStructDataType($structValueType);
+        return new Value($dataValue);
     }
 }

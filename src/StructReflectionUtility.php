@@ -15,7 +15,7 @@ use Struct\Reflection\Internal\Struct\ObjectSignature\Property;
 use Struct\Reflection\Internal\Struct\ObjectSignature\Value;
 use Struct\Reflection\MemoryCache;
 use Struct\Reflection\ReflectionUtility;
-use Struct\Struct\Factory\DataTypeFactory;
+use Struct\Struct\Internal\Helper\FormatHelper;
 use Struct\Struct\Internal\Helper\StructDataTypeHelper;
 use Struct\Struct\Internal\Struct\StructSignature;
 use Struct\Struct\Internal\Struct\StructSignature\DataType\StructDataType;
@@ -27,14 +27,15 @@ use Struct\Struct\Internal\Struct\StructSignature\StructElement;
 use Struct\Struct\Internal\Struct\StructSignature\StructElementArray;
 use Struct\Struct\Internal\Utility\AttributeUtility;
 use Struct\Struct\Internal\Utility\StructValidatorUtility;
+use Struct\Struct\Internal\Utility\UnserializeUtility;
 use Struct\Struct\Internal\Validator\PropertyValidator;
 
 class StructReflectionUtility
 {
     /**
-     * @param class-string<StructInterface>|object $structNameOrStruct
+     * @param class-string<StructInterface>|StructInterface $structNameOrStruct
      */
-    public static function readSignature(object|string $structNameOrStruct): StructSignature
+    public static function readSignature(StructInterface|string $structNameOrStruct): StructSignature
     {
         $structName = $structNameOrStruct;
         if (is_object($structName) === true) {
@@ -42,7 +43,9 @@ class StructReflectionUtility
         }
         $cacheIdentifier = MemoryCache::buildCacheIdentifier($structName, '1936c4c4-f4fa-404c-b5e6-dfaffb60e69a');
         if (MemoryCache::has($cacheIdentifier)) {
-            return MemoryCache::read($cacheIdentifier);
+            /** @var StructSignature $signature */
+            $signature =  MemoryCache::read($cacheIdentifier);
+            return $signature;
         }
         $signature = self::_readSignature($structName);
         MemoryCache::write($cacheIdentifier, $signature);
@@ -85,7 +88,7 @@ class StructReflectionUtility
     {
         $structDataTypeCollection = self::_buildStructDataTypeCollectionFromNamedTypes($property->parameter->types);
         $structArrayType =  self::_buildStructArrayType($property, $structDataTypeCollection->structDataTypes);
-        $defaultValue = self::_buildDefaultValue($property, $structDataTypeCollection->structDataTypes);
+        $defaultValue = self::_buildDefaultValue($property, $structDataTypeCollection);
 
         $element = new StructElement(
             $property->parameter->name,
@@ -97,33 +100,18 @@ class StructReflectionUtility
         return $element;
     }
 
-    /**
-     * @param array<StructDataType> $structDataTypes
-     */
-    protected static function _buildDefaultValue(Property $property, array $structDataTypes): ?Value
+    protected static function _buildDefaultValue(Property $property, StructDataTypeCollection $structDataTypeCollection): ?Value
     {
         if ($property->parameter->defaultValue !== null) {
             return $property->parameter->defaultValue;
         }
-        $defaultValue = AttributeUtility::findFirstAttributeArgumentAsString($property, DefaultValue::class);
+        $defaultValue = AttributeUtility::findFirstAttributeArgument($property, DefaultValue::class);
         if ($defaultValue === null) {
             return null;
         }
-        foreach ($structDataTypes as $structDataType) {
-            if ($structDataType->structUnderlyingDataType === StructUnderlyingDataType::DateTime) {
-                try {
-                    $dateTime = new \DateTimeImmutable($defaultValue);
-                    return new Value($dateTime);
-                } catch (\Throwable) {
-                }
-            }
-            if ($structDataType->structUnderlyingDataType === StructUnderlyingDataType::DataType) {
-                $className = $structDataType->className;
-                $dataType = DataTypeFactory::create($className, $defaultValue);
-                return new Value($dataType);
-            }
-        }
-        return null;
+        $structValueType = UnserializeUtility::processValue($defaultValue, $structDataTypeCollection);
+        $value = FormatHelper::buildValue($structValueType);
+        return $value;
     }
 
     /**
@@ -205,7 +193,7 @@ class StructReflectionUtility
         $unclearStringCount = 0;
         $unclearArrayCount = 0;
         foreach ($structDataTypes as $structDataType) {
-            $unclearType = StructDataTypeHelper::findUnclearType($structDataType->structUnderlyingDataType);
+            $unclearType = $structDataType->clearDataType;
             match ($unclearType) {
                 null => 0,
                 UnclearDataType::Integer => $unclearIntCount++,
@@ -241,11 +229,14 @@ class StructReflectionUtility
     protected static function _buildStructDataType(string $dataType): StructDataType
     {
         $underlyingDataType = StructDataTypeHelper::findUnderlyingDataType($dataType);
+        $unclearDataType = StructDataTypeHelper::findUnclearType($underlyingDataType);
+        $className = null;
         if (self::_addClassName($underlyingDataType) === true) {
             $className = $dataType;
         }
         $structDataType = new StructDataType(
             $underlyingDataType,
+            $unclearDataType,
             $className,
         );
         return $structDataType;

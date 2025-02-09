@@ -21,8 +21,7 @@ class StructSerializeUtility
      */
     public static function serialize(StructInterface $structure, ?KeyConvert $keyConvert = null): array
     {
-        $serializeUtility = new SerializeUtility();
-        return $serializeUtility->serializeStruct($structure, $keyConvert);
+        return SerializeUtility::serializeStruct($structure);
     }
 
     /**

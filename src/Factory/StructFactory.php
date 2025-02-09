@@ -7,9 +7,11 @@ namespace Struct\Struct\Factory;
 use Struct\Contracts\StructInterface;
 use Struct\Exception\InvalidValueException;
 use Struct\Reflection\Internal\Struct\ObjectSignature\Value;
+use Struct\Struct\Internal\Helper\FormatHelper;
 use Struct\Struct\Internal\Struct\StructSignature;
 use Struct\Struct\Internal\Struct\StructSignature\DataType\StructUnderlyingDataType;
 use Struct\Struct\Internal\Struct\StructSignature\StructElement;
+use Struct\Struct\Internal\Utility\UnserializeUtility;
 use Struct\Struct\StructReflectionUtility;
 
 class StructFactory
@@ -83,7 +85,7 @@ class StructFactory
         foreach ($structSignature->structElements as $structElement) {
             $propertyName = $structElement->name;
             try {
-                $values[$propertyName] = self::buildValue($structElement, $data);
+                $values[$propertyName] = self::_createValue($structElement, $data);
             } catch (InvalidValueException $invalidValueException) {
                 throw new InvalidValueException($invalidValueException, ':' . $propertyName);
             }
@@ -91,24 +93,51 @@ class StructFactory
         return $values;
     }
 
-    protected static function buildValue(StructElement $structElement, null|array|object $data): ?Value
+    protected static function _createValue(StructElement $structElement, null|array|object $data): ?Value
     {
-        if ($structElement->defaultValue !== null) {
-            return  $structElement->defaultValue;
+        $value = self::_processValue($structElement, $data);
+        if ($value !== null) {
+            return $value;
         }
-        if ($structElement->isAllowsNull === true) {
-            return new Value(null);
-        }
-
         foreach ($structElement->structDataTypeCollection->structDataTypes as $structDataType) {
-            if ($structDataType->structUnderlyingDataType === StructUnderlyingDataType::Array) {
-                return new Value([]);
-            }
             if ($structDataType->structUnderlyingDataType === StructUnderlyingDataType::Struct) {
                 $struct = self::create($structDataType->className);
                 return new Value($struct);
             }
         }
         return null;
+    }
+
+    protected static function _processValue(StructElement $structElement, null|array|object $data): ?Value
+    {
+        $dataValue = UnserializeUtility::findValue($data, $structElement->name);
+        if ($dataValue === null) {
+            if ($structElement->defaultValue !== null) {
+                return  $structElement->defaultValue;
+            }
+            if ($structElement->isAllowsNull === true) {
+                return new Value(null);
+            }
+            return null;
+        }
+        $processedValue = UnserializeUtility::processValue($dataValue->valueData, $structElement->structDataTypeCollection);
+        if ($processedValue === null) {
+            return null;
+        }
+        if ($processedValue->value) {
+            return $processedValue->value;
+        }
+        if ($processedValue->structUnderlyingDataType === StructUnderlyingDataType::Struct) {
+            $struct = self::create($processedValue->className, $processedValue->rawDataValue);
+            return new Value($struct);
+        }
+        if ($processedValue->structUnderlyingDataType === StructUnderlyingDataType::Array) {
+            return new Value([]);
+        }
+        if ($processedValue->structUnderlyingDataType === StructUnderlyingDataType::ArrayList) {
+            return new Value([]);
+        }
+        $valueData = FormatHelper::buildStructDataType($processedValue);
+        return new Value($valueData);
     }
 }

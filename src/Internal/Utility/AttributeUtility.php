@@ -38,7 +38,7 @@ class AttributeUtility
      */
     public static function findFirstAttributeArgumentAsArrayOrString(Property $property, string $attributeName): null|string|array
     {
-        $argument =  self::_findFirstAttributeArgument($property, $attributeName);
+        $argument =  self::findFirstAttributeArgument($property, $attributeName);
         if (is_string($argument) === true) {
             return $argument;
         }
@@ -64,7 +64,7 @@ class AttributeUtility
         return $attributes[0];
     }
 
-    protected static function _findFirstAttributeArgument(Property $property, string $attributeName): mixed
+    public static function findFirstAttributeArgument(Property $property, string $attributeName): mixed
     {
         $attribute = self::findFirstAttribute($property, $attributeName);
         if ($attribute === null) {
