@@ -26,8 +26,8 @@ use Struct\Struct\Internal\Struct\StructSignature\DataType\UnclearDataType;
 use Struct\Struct\Internal\Struct\StructSignature\StructElement;
 use Struct\Struct\Internal\Struct\StructSignature\StructElementArray;
 use Struct\Struct\Internal\Utility\AttributeUtility;
-use Struct\Struct\Internal\Utility\StructValidatorUtility;
 use Struct\Struct\Internal\Utility\DeserializationUtility;
+use Struct\Struct\Internal\Utility\StructValidatorUtility;
 use Struct\Struct\Internal\Validator\PropertyValidator;
 
 class StructReflectionUtility

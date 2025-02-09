@@ -9,11 +9,11 @@ use Struct\Exception\InvalidValueException;
 use Struct\Reflection\Internal\Struct\ObjectSignature\Value;
 use Struct\Struct\Internal\Helper\FormatHelper;
 use Struct\Struct\Internal\Struct\StructSignature;
+use Struct\Struct\Internal\Struct\StructSignature\DataType\StructUnderlyingArrayType;
 use Struct\Struct\Internal\Struct\StructSignature\DataType\StructUnderlyingDataType;
 use Struct\Struct\Internal\Struct\StructSignature\DataType\StructValueType;
 use Struct\Struct\Internal\Struct\StructSignature\StructElement;
 use Struct\Struct\Internal\Struct\StructSignature\StructElementArray;
-use Struct\Struct\Internal\Struct\StructSignature\DataType\StructUnderlyingArrayType;
 use Struct\Struct\Internal\Utility\DeserializationUtility;
 use Struct\Struct\StructReflectionUtility;
 
@@ -148,12 +148,10 @@ class StructFactory
         return $value;
     }
 
-
-
     protected static function _processArray(StructValueType $structValueType, StructElementArray $structElementArray): ?array
     {
-        if($structElementArray->structUnderlyingArrayType === StructUnderlyingArrayType::ArrayPassThrough) {
-            if(is_array($structValueType->rawDataValue) === true) {
+        if ($structElementArray->structUnderlyingArrayType === StructUnderlyingArrayType::ArrayPassThrough) {
+            if (is_array($structValueType->rawDataValue) === true) {
                 return $structValueType->rawDataValue;
             }
             return null;
@@ -161,8 +159,8 @@ class StructFactory
         $processedArray = [];
         foreach ($structValueType->rawDataValue as $key => $value) {
             $processedValue =  DeserializationUtility::processValue($value, $structElementArray->structDataTypeCollection);
-            $postProcessedValue = self::_postProcessValue($processedValue,null);
-            if($structValueType->structUnderlyingDataType === StructUnderlyingDataType::ArrayList) {
+            $postProcessedValue = self::_postProcessValue($processedValue, null);
+            if ($structValueType->structUnderlyingDataType === StructUnderlyingDataType::ArrayList) {
                 $processedArray[] = $postProcessedValue->valueData;
             } else {
                 $processedArray[$key] = $postProcessedValue->valueData;

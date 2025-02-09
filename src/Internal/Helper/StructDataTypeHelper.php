@@ -77,7 +77,7 @@ class StructDataTypeHelper
     protected static function checkForClassType(object|string $dataType): ?StructUnderlyingDataType
     {
         if (is_a($dataType, \BackedEnum::class, true) === true) {
-            if(is_int($dataType::cases()[0]->value) === true) {
+            if (is_int($dataType::cases()[0]->value) === true) {
                 return StructUnderlyingDataType::EnumInt;
             }
             return StructUnderlyingDataType::EnumString;
