@@ -90,6 +90,15 @@ class DeserializationUtility
 
     protected static function _findInt(mixed $valueData, StructDataTypeCollection $structDataTypeCollection): ?StructValueType
     {
+        if ($structDataTypeCollection->unclearInt === true) {
+            $structValueType = new StructValueType(
+                StructUnderlyingDataType::Integer,
+                null,
+                $valueData,
+                new Value($valueData),
+            );
+            return $structValueType;
+        }
         $structValueType = self::_findMatchingDataType(
             $valueData,
             $structDataTypeCollection,
@@ -103,6 +112,15 @@ class DeserializationUtility
 
     protected static function _findString(string $valueData, StructDataTypeCollection $structDataTypeCollection): ?StructValueType
     {
+        if ($structDataTypeCollection->unclearString === true) {
+            $structValueType = new StructValueType(
+                StructUnderlyingDataType::String,
+                null,
+                $valueData,
+                new Value($valueData),
+            );
+            return $structValueType;
+        }
         $structValueType = self::_findMatchingDataType(
             $valueData,
             $structDataTypeCollection,
