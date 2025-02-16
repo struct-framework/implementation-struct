@@ -57,9 +57,9 @@ class StructReflectionUtility
      */
     protected static function _readSignature(string $structName): StructSignature
     {
-        if(ReflectionUtility::isAbstract($structName) === true) {
+        if (ReflectionUtility::isAbstract($structName) === true) {
             throw new \Exception('Can not build signature for abstract struct', 1739716703);
-        };
+        }
         $objectSignature = ReflectionUtility::readSignature($structName);
         StructValidatorUtility::validate($objectSignature);
         $structName = $objectSignature->objectName;
@@ -203,7 +203,7 @@ class StructReflectionUtility
                 UnclearDataType::String=> $unclearStringCount++,
                 UnclearDataType::Array => $unclearArrayCount++,
             };
-            if($structDataType->isAbstract === true) {
+            if ($structDataType->isAbstract === true) {
                 $unclearArrayCount++;
             }
         }
@@ -242,7 +242,7 @@ class StructReflectionUtility
         if (self::_addClassName($underlyingDataType) === true) {
             $className = $dataType;
         }
-        if($underlyingDataType === StructUnderlyingDataType::Struct) {
+        if ($underlyingDataType === StructUnderlyingDataType::Struct) {
             $isAbstract = ReflectionUtility::isAbstract($className);
         }
         $structDataType = new StructDataType(

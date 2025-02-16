@@ -36,7 +36,7 @@ class StructHashUtility
     {
         foreach ($structElements as $structElement) {
             $name = $structElement->name;
-            if($structElement->isAllowsNull === true) {
+            if ($structElement->isAllowsNull === true) {
                 $name .= 'a78bfb14-7da9-4d7d-891f-b48b55c282cd';
             }
             $types = '';
@@ -48,14 +48,13 @@ class StructHashUtility
         return $elementSignatures;
     }
 
-
     protected static function buildStructElementArray(?StructElementArray $structElementArray): string
     {
-        if($structElementArray === null) {
+        if ($structElementArray === null) {
             return '';
         }
         $types = $structElementArray->structUnderlyingArrayType->value;
-        if($structElementArray->structDataTypeCollection === null) {
+        if ($structElementArray->structDataTypeCollection === null) {
             return $types;
         }
         $types .= '<';
@@ -63,7 +62,6 @@ class StructHashUtility
         $types .= '>';
         return $types;
     }
-
 
     /**
      * @param array<StructDataType> $structDataTypes
@@ -75,11 +73,10 @@ class StructHashUtility
         foreach ($structDataTypes as $structDataType) {
             $className = $structDataType->className;
             $types .= $structDataType->structUnderlyingDataType->value;
-            if($className !== null) {
+            if ($className !== null) {
                 $types .= '<' . $className . '>';
             }
         }
         return $types;
     }
-
 }
