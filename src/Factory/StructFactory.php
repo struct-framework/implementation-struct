@@ -103,10 +103,11 @@ class StructFactory
             return $value;
         }
         foreach ($structElement->structDataTypeCollection->structDataTypes as $structDataType) {
-            if ($structDataType->structUnderlyingDataType === StructUnderlyingDataType::Struct) {
-                $struct = self::create($structDataType->className);
-                return new Value($struct);
+            if ($structDataType->structUnderlyingDataType !== StructUnderlyingDataType::Struct) {
+                continue;
             }
+            $struct = self::create($structDataType->className);
+            return new Value($struct);
         }
         return null;
     }

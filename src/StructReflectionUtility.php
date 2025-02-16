@@ -61,10 +61,12 @@ class StructReflectionUtility
         StructValidatorUtility::validate($objectSignature);
         $structName = $objectSignature->objectName;
         $isReadOnly = $objectSignature->isReadOnly;
+        $isAbstract = $objectSignature->isAbstract;
         $elements = self::_buildElements($structName, $objectSignature->properties);
         $structSignature = new StructSignature(
             $structName,
             $isReadOnly,
+            $isAbstract,
             $elements,
         );
         return $structSignature;
