@@ -94,6 +94,7 @@ class DeserializationUtility
             $structValueType = new StructValueType(
                 StructUnderlyingDataType::Integer,
                 null,
+                null,
                 $valueData,
                 new Value($valueData),
             );

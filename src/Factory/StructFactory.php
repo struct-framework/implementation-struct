@@ -106,6 +106,9 @@ class StructFactory
             if ($structDataType->structUnderlyingDataType !== StructUnderlyingDataType::Struct) {
                 continue;
             }
+            if ($structDataType->isAbstract === true) {
+                continue;
+            }
             $struct = self::create($structDataType->className);
             return new Value($struct);
         }
@@ -141,8 +144,11 @@ class StructFactory
             $array = self::_processArray($processedValue, $structElementArray);
             return new Value($array);
         }
-        if ($processedValue->structUnderlyingDataType === StructUnderlyingDataType::Struct) {
-            $struct = self::create($processedValue->className, $processedValue->rawDataValue);
+        if (
+            $processedValue->structUnderlyingDataType === StructUnderlyingDataType::Struct
+        ) {
+            $className = $processedValue->className;
+            $struct = self::create($className, $processedValue->rawDataValue);
             return new Value($struct);
         }
         $value = FormatHelper::buildValue($processedValue);

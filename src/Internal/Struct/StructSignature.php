@@ -15,7 +15,6 @@ readonly class StructSignature
     public function __construct(
         public string $structName,
         public bool $isReadOnly = false,
-        public bool $isAbstract = false,
         /**
          * @var array<StructElement>
          */

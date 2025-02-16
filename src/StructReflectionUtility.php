@@ -57,16 +57,17 @@ class StructReflectionUtility
      */
     protected static function _readSignature(string $structName): StructSignature
     {
+        if(ReflectionUtility::isAbstract($structName) === true) {
+            throw new \Exception('Can not build signature for abstract struct', 1739716703);
+        };
         $objectSignature = ReflectionUtility::readSignature($structName);
         StructValidatorUtility::validate($objectSignature);
         $structName = $objectSignature->objectName;
         $isReadOnly = $objectSignature->isReadOnly;
-        $isAbstract = $objectSignature->isAbstract;
         $elements = self::_buildElements($structName, $objectSignature->properties);
         $structSignature = new StructSignature(
             $structName,
             $isReadOnly,
-            $isAbstract,
             $elements,
         );
         return $structSignature;
@@ -202,6 +203,9 @@ class StructReflectionUtility
                 UnclearDataType::String=> $unclearStringCount++,
                 UnclearDataType::Array => $unclearArrayCount++,
             };
+            if($structDataType->isAbstract === true) {
+                $unclearArrayCount++;
+            }
         }
         $unclearInt = $unclearIntCount > 1;
         $unclearString = $unclearStringCount > 1;
@@ -233,13 +237,19 @@ class StructReflectionUtility
         $underlyingDataType = StructDataTypeHelper::findUnderlyingDataType($dataType);
         $unclearDataType = StructDataTypeHelper::findUnclearType($underlyingDataType);
         $className = null;
+        $isAbstract = null;
+
         if (self::_addClassName($underlyingDataType) === true) {
             $className = $dataType;
+        }
+        if($underlyingDataType === StructUnderlyingDataType::Struct) {
+            $isAbstract = ReflectionUtility::isAbstract($className);
         }
         $structDataType = new StructDataType(
             $underlyingDataType,
             $unclearDataType,
             $className,
+            $isAbstract,
         );
         return $structDataType;
     }

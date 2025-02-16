@@ -16,6 +16,7 @@ readonly class StructDataType
         public StructUnderlyingDataType $structUnderlyingDataType,
         public ?UnclearDataType $clearDataType,
         public ?string $className,
+        public ?bool $isAbstract,
     ) {
     }
 }
