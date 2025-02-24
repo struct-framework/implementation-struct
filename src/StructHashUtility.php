@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Struct\Struct;
 
 use Struct\Contracts\StructInterface;
+use Struct\Exception\SyntaxException;
 use Struct\Struct\Internal\Struct\StructSignature\DataType\StructDataType;
 use Struct\Struct\Internal\Struct\StructSignature\StructElement;
 use Struct\Struct\Internal\Struct\StructSignature\StructElementArray;
@@ -34,16 +35,15 @@ class StructHashUtility
      */
     protected static function buildElementsSignature(array $structElements): string
     {
+        $elementSignatures = '';
         foreach ($structElements as $structElement) {
             $name = $structElement->name;
             if ($structElement->isAllowsNull === true) {
                 $name .= 'a78bfb14-7da9-4d7d-891f-b48b55c282cd';
             }
-            $types = '';
-            $types .= self::buildStructElementArray($structElement->structElementArray);
+            $types  = self::buildStructElementArray($structElement->structElementArray);
             $types .= self::buildStructDataTypeCollection($structElement->structDataTypeCollection->structDataTypes);
-            $elementSignature = $name . ':' . $types;
-            $elementSignatures .= $elementSignature;
+            $elementSignatures .= $name . ':' . $types;
         }
         return $elementSignatures;
     }

@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace Struct\Struct;
 
+use DateTimeInterface;
+use Exception\Unexpected\UnexpectedException;
 use Struct\Attribute\ArrayKeyList;
 use Struct\Attribute\ArrayList;
 use Struct\Attribute\ArrayPassThrough;
 use Struct\Attribute\DefaultValue;
+use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructInterface;
-use Struct\Exception\InvalidStructException;
+use Struct\Reflection\Internal\Struct\ObjectSignature\Parts\IntersectionType;
 use Struct\Reflection\Internal\Struct\ObjectSignature\Parts\NamedType;
 use Struct\Reflection\Internal\Struct\ObjectSignature\Property;
 use Struct\Reflection\Internal\Struct\ObjectSignature\Value;
 use Struct\Reflection\MemoryCache;
 use Struct\Reflection\ReflectionUtility;
+use Struct\Exception\InvalidStructException;
 use Struct\Struct\Internal\Helper\FormatHelper;
 use Struct\Struct\Internal\Helper\StructDataTypeHelper;
 use Struct\Struct\Internal\Struct\StructSignature;
@@ -29,6 +33,7 @@ use Struct\Struct\Internal\Utility\AttributeUtility;
 use Struct\Struct\Internal\Utility\DeserializationUtility;
 use Struct\Struct\Internal\Utility\StructValidatorUtility;
 use Struct\Struct\Internal\Validator\PropertyValidator;
+use UnitEnum;
 
 class StructReflectionUtility
 {
@@ -57,11 +62,8 @@ class StructReflectionUtility
      */
     protected static function _readSignature(string $structName): StructSignature
     {
-        if (ReflectionUtility::isAbstract($structName) === true) {
-            throw new \Exception('Can not build signature for abstract struct', 1739716703);
-        }
         $objectSignature = ReflectionUtility::readSignature($structName);
-        StructValidatorUtility::validate($objectSignature);
+        StructValidatorUtility::preValidate($objectSignature);
         $structName = $objectSignature->objectName;
         $isReadOnly = $objectSignature->isReadOnly;
         $elements = self::_buildElements($structName, $objectSignature->properties);
@@ -113,6 +115,9 @@ class StructReflectionUtility
             return null;
         }
         $structValueType = DeserializationUtility::processValue($defaultValue, $structDataTypeCollection);
+        if($structValueType === null) {
+            throw new InvalidStructException(1739726195, 'The default value can not be process');
+        }
         $value = FormatHelper::buildValue($structValueType);
         return $value;
     }
@@ -149,8 +154,8 @@ class StructReflectionUtility
             throw new InvalidStructException(1739035381, 'The array is undefined');
         }
         $dataTypes = $arguments;
-        if (is_string($arguments) === true) {
-            $dataTypes = [$arguments];
+        if (is_string($dataTypes) === true) {
+            $dataTypes = [$dataTypes];
         }
         $structDataTypeCollection = self::_buildStructDataTypeCollection($dataTypes);
         $structArrayType = new StructElementArray(
@@ -174,12 +179,15 @@ class StructReflectionUtility
     }
 
     /**
-     * @param array<NamedType> $namedTypes
+     * @param array<NamedType|IntersectionType> $namedTypes
      */
     protected static function _buildStructDataTypeCollectionFromNamedTypes(array $namedTypes): StructDataTypeCollection
     {
         $dataTypes = [];
         foreach ($namedTypes as $type) {
+            if($type instanceof IntersectionType) {
+                throw new InvalidStructException(1739726010, 'IntersectionType are not supported in structs');
+            }
             $dataTypes[] = $type->dataType;
         }
         $structDataTypeCollection = self::_buildStructDataTypeCollection($dataTypes);
@@ -240,9 +248,13 @@ class StructReflectionUtility
         $isAbstract = null;
 
         if (self::_addClassName($underlyingDataType) === true) {
+            /** @var class-string<UnitEnum>|class-string<DateTimeInterface>|class-string<StructInterface>|class-string<DataTypeInterface> $className */
             $className = $dataType;
         }
         if ($underlyingDataType === StructUnderlyingDataType::Struct) {
+            if($className === null) {
+                throw new UnexpectedException();
+            }
             $isAbstract = ReflectionUtility::isAbstract($className);
         }
         $structDataType = new StructDataType(

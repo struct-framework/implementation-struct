@@ -7,6 +7,7 @@ namespace Struct\Struct\Internal\Utility;
 use Struct\Contracts\DataTypeInterface;
 use Struct\Contracts\StructInterface;
 use Struct\Reflection\Internal\Struct\ObjectSignature\Value;
+use Struct\Struct\Internal\Helper\EnumHelper;
 use Struct\Struct\Internal\Struct\StructSignature\DataType\StructDataTypeCollection;
 use Struct\Struct\Internal\Struct\StructSignature\DataType\StructUnderlyingDataType;
 use Struct\Struct\Internal\Struct\StructSignature\DataType\StructValueType;
@@ -88,20 +89,19 @@ class DeserializationUtility
         return null;
     }
 
-    protected static function _findInt(mixed $valueData, StructDataTypeCollection $structDataTypeCollection): ?StructValueType
+    protected static function _findInt(mixed $rawDataValue, StructDataTypeCollection $structDataTypeCollection): ?StructValueType
     {
         if ($structDataTypeCollection->unclearInt === true) {
             $structValueType = new StructValueType(
                 StructUnderlyingDataType::Integer,
                 null,
+                $rawDataValue,
                 null,
-                $valueData,
-                new Value($valueData),
             );
             return $structValueType;
         }
         $structValueType = self::_findMatchingDataType(
-            $valueData,
+            $rawDataValue,
             $structDataTypeCollection,
             [
                 StructUnderlyingDataType::EnumInt,
@@ -136,18 +136,22 @@ class DeserializationUtility
         return $structValueType;
     }
 
-    protected static function _findArray(array $valueData, StructDataTypeCollection $structDataTypeCollection): ?StructValueType
+    /**
+     * @param array<mixed> $rawDataValue
+     */
+    protected static function _findArray(array $rawDataValue, StructDataTypeCollection $structDataTypeCollection): ?StructValueType
     {
-        if (array_is_list($valueData) === true) {
+        if (array_is_list($rawDataValue) === true) {
             $structValueType = new StructValueType(
                 StructUnderlyingDataType::ArrayList,
                 null,
-                $valueData,
+                $rawDataValue,
+                null
             );
             return $structValueType;
         }
         $structValueType = self::_findMatchingDataType(
-            $valueData,
+            $rawDataValue,
             $structDataTypeCollection,
             [
                 StructUnderlyingDataType::Struct,
@@ -160,18 +164,19 @@ class DeserializationUtility
     /**
      * @param array<StructUnderlyingDataType> $structUnderlyingDataTypes
      */
-    protected static function _findMatchingDataType(mixed $valueData, StructDataTypeCollection $structDataTypeCollection, array $structUnderlyingDataTypes, StructUnderlyingDataType $defaultStructUnderlyingDataType): StructValueType
+    protected static function _findMatchingDataType(mixed $rawDataValue, StructDataTypeCollection $structDataTypeCollection, array $structUnderlyingDataTypes, StructUnderlyingDataType $defaultStructUnderlyingDataType): StructValueType
     {
         $structValueType = null;
         foreach ($structDataTypeCollection->structDataTypes as $structDataType) {
             $structUnderlyingDataType = $structDataType->structUnderlyingDataType;
-            if (in_array($structUnderlyingDataType, $structUnderlyingDataTypes) === false) {
+            if (in_array($structUnderlyingDataType, $structUnderlyingDataTypes, true) === false) {
                 continue;
             }
             $structValueType = new StructValueType(
                 $structUnderlyingDataType,
                 $structDataType->className,
-                $valueData,
+                $rawDataValue,
+                null,
             );
             break;
         }
@@ -179,52 +184,46 @@ class DeserializationUtility
             return $structValueType;
         }
         $value = null;
-        if (is_array($valueData) === false) {
-            $value = new Value($valueData);
+        if (is_array($rawDataValue) === false) {
+            $value = new Value($rawDataValue);
         }
         $structValueType = new StructValueType(
             $defaultStructUnderlyingDataType,
             null,
-            $valueData,
+            $rawDataValue,
             $value,
         );
         return $structValueType;
     }
 
-    protected static function _findStructType(mixed $valueData): ?StructValueType
+    protected static function _findStructType(mixed $rawDataValue): ?StructValueType
     {
+        if(is_object($rawDataValue) === false) {
+            return null;
+        }
+
         $structUnderlyingDataType = null;
         $className = null;
         $value = null;
 
-        if (is_a($valueData, StructInterface::class)) {
+        if (is_a($rawDataValue, StructInterface::class) === true) {
             $structUnderlyingDataType = StructUnderlyingDataType::Struct;
-            $className = $valueData::class;
-            $value = new Value($valueData);
+            $className = $rawDataValue::class;
+            $value = new Value($rawDataValue);
         }
-        if (is_a($valueData, DataTypeInterface::class)) {
+        if (is_a($rawDataValue, DataTypeInterface::class) === true) {
             $structUnderlyingDataType = StructUnderlyingDataType::DataType;
-            $className = $valueData::class;
-            $value = new Value($valueData);
+            $className = $rawDataValue::class;
+            $value = new Value($rawDataValue);
         }
-        if (is_a($valueData, \DateTimeInterface::class)) {
+        if (is_a($rawDataValue, \DateTimeInterface::class) === true) {
             $structUnderlyingDataType = StructUnderlyingDataType::DateTime;
-            $value = new Value($valueData);
+            $value = new Value($rawDataValue);
         }
-        if (is_a($valueData, \IntBackedEnum::class)) {
-            $structUnderlyingDataType = StructUnderlyingDataType::EnumInt;
-            $className = $valueData::class;
-            $value = new Value($valueData);
-        }
-        if (is_a($valueData, \StringBackedEnum::class)) {
-            $structUnderlyingDataType = StructUnderlyingDataType::EnumString;
-            $className = $valueData::class;
-            $value = new Value($valueData);
-        }
-        if (is_a($valueData, \UnitEnum::class)) {
-            $structUnderlyingDataType = StructUnderlyingDataType::Enum;
-            $className = $valueData::class;
-            $value = new Value($valueData);
+        if (is_a($rawDataValue, \UnitEnum::class) === true) {
+            $structUnderlyingDataType = EnumHelper::findStructUnderlyingDataType($rawDataValue);
+            $className = $rawDataValue::class;
+            $value = new Value($rawDataValue);
         }
         if ($structUnderlyingDataType === null) {
             return null;
@@ -232,29 +231,31 @@ class DeserializationUtility
         $structValueType = new StructValueType(
             $structUnderlyingDataType,
             $className,
-            $valueData,
+            $rawDataValue,
             $value,
         );
         return $structValueType;
     }
 
-    public static function _findDefinedType(mixed $valueData): ?StructValueType
+    public static function _findDefinedType(mixed $rawDataValue): ?StructValueType
     {
-        if (is_array($valueData) === false) {
+        if (is_array($rawDataValue) === false) {
             return null;
         }
-        if (count($valueData) !== 2) {
+        if (count($rawDataValue) !== 2) {
             return null;
         }
-        if (array_key_exists('structType', $valueData) === false) {
+        if (array_key_exists('structType', $rawDataValue) === false) {
             return null;
         }
-        if (array_key_exists('value', $valueData) === false) {
+        if (array_key_exists('value', $rawDataValue) === false) {
             return null;
         }
-        $structType = $valueData['structType'];
-        $value = $valueData['value'];
-
+        $structType = $rawDataValue['structType'];
+        $value = $rawDataValue['value'];
+        if (is_string($structType) === false) {
+            return null;
+        }
         $structUnderlyingDataType = null;
         $className = null;
         if (
@@ -270,26 +271,8 @@ class DeserializationUtility
             $structUnderlyingDataType = StructUnderlyingDataType::DataType;
             $className = $structType;
         }
-
-        if (
-            is_a($structType, \IntBackedEnum::class, true) === true &&
-            is_int($value) === true
-        ) {
-            $structUnderlyingDataType = StructUnderlyingDataType::EnumInt;
-            $className = $structType;
-        }
-        if (
-            is_a($structType, \StringBackedEnum::class, true) === true &&
-            is_string($value) === true
-        ) {
-            $structUnderlyingDataType = StructUnderlyingDataType::EnumString;
-            $className = $structType;
-        }
-        if (
-            is_a($structType, \UnitEnum::class, true) === true &&
-            is_string($value) === true
-        ) {
-            $structUnderlyingDataType = StructUnderlyingDataType::Enum;
+        if (is_a($structType, \UnitEnum::class, true) === true) {
+            $structUnderlyingDataType = EnumHelper::findStructUnderlyingDataType($structType);
             $className = $structType;
         }
         if (
@@ -306,10 +289,14 @@ class DeserializationUtility
             $structUnderlyingDataType,
             $className,
             $value,
+            null,
         );
         return $structValueType;
     }
 
+    /**
+     * @param array<mixed>|object|null $data
+     */
     public static function findValue(null|array|object $data, string $key): ?Value
     {
         if ($data === null) {
@@ -324,7 +311,7 @@ class DeserializationUtility
         }
         if (property_exists($data, $key) === true) {
             try {
-                $value = $data->{$key};
+                $value = $data->{$key}; // @phpstan-ignore property.dynamicName
                 return new Value($value);
             } catch (\Throwable) {
             }
@@ -332,7 +319,7 @@ class DeserializationUtility
         $getterName = 'get' . ucfirst($key);
         if (method_exists($data, $getterName) === true) {
             try {
-                $value = $data->$getterName();
+                $value = $data->$getterName(); // @phpstan-ignore method.dynamicName
                 return new Value($value);
             } catch (\Throwable) {
             }

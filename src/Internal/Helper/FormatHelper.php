@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Struct\Struct\Internal\Helper;
 
 use BackedEnum;
+use DateMalformedStringException;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Exception\Unexpected\UnexpectedException;
 use Struct\Contracts\DataTypeInterface;
+use Struct\Exception\DeserializeException;
 use Struct\Reflection\Internal\Struct\ObjectSignature\Value;
 use Struct\Struct\Factory\DataTypeFactory;
 use Struct\Struct\Internal\Struct\StructSignature\DataType\StructUnderlyingDataType;
@@ -41,61 +43,73 @@ class FormatHelper
 
     public static function buildDateTime(StructValueType $structValueType): DateTimeImmutable
     {
-        $dataValue = $structValueType->rawDataValue;
-        return new DateTimeImmutable($dataValue);
+        /** @var string $rawDataValue */
+        $rawDataValue = $structValueType->rawDataValue;
+        try {
+            $dateTime = new DateTimeImmutable($rawDataValue);
+        } catch (DateMalformedStringException $e) {
+            throw new DeserializeException(1740334702, 'Invalid value <'.$rawDataValue.'> for date time');
+        }
+        return $dateTime;
     }
 
-    /**
-     * @template T of DataTypeInterface
-     * @param  class-string<T> $typeClassName
-     * @return T
-     */
+
     public static function buildDataType(StructValueType $structValueType): DataTypeInterface
     {
+        /** @var class-string<DataTypeInterface> $className */
         $className = $structValueType->className;
-        $dataValue = $structValueType->rawDataValue;
-        return DataTypeFactory::create($className, $dataValue);
+        /** @var string $rawDataValue */
+        $rawDataValue = $structValueType->rawDataValue;
+        return DataTypeFactory::create($className, $rawDataValue);
     }
 
-    /**
-     * @template T of \StringBackedEnum
-     * @param  class-string<T> $typeClassName
-     * @return T
-     */
+
     public static function buildEnumInt(StructValueType $structValueType): \BackedEnum
     {
+        /** @var class-string<BackedEnum> $className */
         $className = $structValueType->className;
-        $dataValue = $structValueType->rawDataValue;
-        return $className::tryFrom($dataValue);
+        /** @var int $rawDataValue */
+        $rawDataValue = $structValueType->rawDataValue;
+        $enum = $className::tryFrom($rawDataValue);
+        if($enum === null) {
+            throw new DeserializeException(1740334619, 'Invalid value <'.$rawDataValue.'> for enum <'.$className.'>');
+        }
+        return $enum;
     }
 
-    /**
-     * @template T of \StringBackedEnum
-     * @param  class-string<T> $typeClassName
-     * @return T
-     */
     public static function buildEnumString(StructValueType $structValueType): \BackedEnum
     {
+        /** @var class-string<BackedEnum> $className */
         $className = $structValueType->className;
-        $dataValue = $structValueType->rawDataValue;
-        return $className::tryFrom($dataValue);
+        /** @var string $rawDataValue */
+        $rawDataValue = $structValueType->rawDataValue;
+        $enum = $className::tryFrom($rawDataValue);
+        if($enum === null) {
+            throw new DeserializeException(1740334609, 'Invalid value <'.$rawDataValue.'> for enum <'.$className.'>');
+        }
+        return $enum;
     }
 
-    /**
-     * @template T of \UnitEnum
-     * @param  class-string<T> $typeClassName
-     * @return T
-     */
-    public static function buildEnum(StructValueType $structValueType): \UnitEnum
+
+    public static function buildEnum(StructValueType $structValueType): UnitEnum
     {
         $className = $structValueType->className;
-        $dataValue = $structValueType->rawDataValue;
+        $rawDataValue = $structValueType->rawDataValue;
+        if($className === null) {
+            throw new UnexpectedException(1740334919);
+        }
+        if(is_a($className, UnitEnum::class, true) === false) {
+            throw new UnexpectedException(1740334806);
+        }
+        if(is_string($rawDataValue) === false) {
+            throw new UnexpectedException(1740334850);
+        }
         foreach ($className::cases() as $case) {
-            if ($case->name === $dataValue) {
+            if ($case->name === $rawDataValue) {
                 return $case;
             }
         }
-        throw new UnexpectedException(1739092984);
+        throw new DeserializeException(1739092984, 'Invalid value < ' . $rawDataValue . '> for enum < '. $className . '>');
     }
 
     public static function buildStructDataType(StructValueType $structValueType): mixed
@@ -110,9 +124,10 @@ class FormatHelper
             StructUnderlyingDataType::EnumInt    => self::buildEnumInt($structValueType),
             StructUnderlyingDataType::DateTime   => self::buildDateTime($structValueType),
             StructUnderlyingDataType::DataType   => self::buildDataType($structValueType),
+            null,
             StructUnderlyingDataType::Array,
             StructUnderlyingDataType::ArrayList,
-            StructUnderlyingDataType::Struct => throw new \Exception('To be implemented'),
+            StructUnderlyingDataType::Struct => throw new UnexpectedException(1740315323),
         };
         return $result;
     }
