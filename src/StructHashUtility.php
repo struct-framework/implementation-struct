@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Struct\Struct;
 
 use Struct\Contracts\StructInterface;
-use Struct\Exception\SyntaxException;
 use Struct\Struct\Internal\Struct\StructSignature\DataType\StructDataType;
 use Struct\Struct\Internal\Struct\StructSignature\StructElement;
 use Struct\Struct\Internal\Struct\StructSignature\StructElementArray;
