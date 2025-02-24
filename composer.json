@@ -3,7 +3,7 @@
     "license": "MIT",
     "description": "Simple package for structured and more complex data types, similar to 'Struct' in other programming languages",
     "require": {
-        "php": "^8.3.0",
+        "php": "^8.4.0",
         "exception/unexpected": "1.0.0",
         "struct/contracts": "^2.0.0",
         "struct/reflection": "^2.0.0"
