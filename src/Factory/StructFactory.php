@@ -68,6 +68,7 @@ class StructFactory
             $type === 'bool' ||
             is_a($type, DateTimeInterface::class, true) === true ||
             is_a($type, DataTypeInterface::class, true) === true ||
+            is_a($type, \DataType\Contracts\DataTypeInterface::class, true) === true ||
             is_a($type, UnitEnum::class, true) === true
         ) {
             $undefined = new Undefined();

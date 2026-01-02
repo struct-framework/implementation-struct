@@ -23,6 +23,7 @@ use Struct\Struct\Private\Enum\SerializeDataType;
 use Struct\Struct\Private\Helper\PropertyReflectionHelper;
 use Struct\Struct\Private\Helper\TransformHelper;
 use Struct\Struct\Private\Struct\PropertyReflection;
+use DataType\Contracts\DataTypeInterface As NewDataTypeInterface;
 use UnitEnum;
 
 class DeserializeUtility
@@ -74,6 +75,7 @@ class DeserializeUtility
             SerializeDataType::StructCollection => $this->_deserializeStructCollection($data, $propertyReflection, $keyConvert),
             SerializeDataType::ArrayType => $this->_deserializeArray($data, $propertyReflection, $keyConvert),
             SerializeDataType::DataType => $this->_deserializeDataType($data, $propertyReflection), // @phpstan-ignore-line
+            SerializeDataType::NewDataType => $this->_deserializeNewDataType($data, $propertyReflection), // @phpstan-ignore-line
             SerializeDataType::BuildInType => $this->_deserializeBuildIn($data, $type, $propertyReflection),
         };
         return $result;
@@ -116,6 +118,9 @@ class DeserializeUtility
         }
         if (is_a($type, DataTypeInterface::class, true) === true) {
             return SerializeDataType::DataType;
+        }
+        if (is_a($type, NewDataTypeInterface::class, true) === true) {
+            return SerializeDataType::NewDataType;
         }
         if (is_a($type, StructInterface::class, true) === true) {
             return SerializeDataType::StructureType;
@@ -180,6 +185,15 @@ class DeserializeUtility
             return $dataArray;
         }
         throw new UnexpectedException(1676979096);
+    }
+
+    protected function _deserializeNewDataType(string|Stringable $serializedData, PropertyReflection $propertyReflection): NewDataTypeInterface
+    {
+        $serializedData = (string) $serializedData;
+        /** @var class-string<NewDataTypeInterface> $type */
+        $type = $propertyReflection->type;
+        $dataType = new $type($serializedData);
+        return $dataType;
     }
 
     protected function _deserializeDataType(string|Stringable $serializedData, PropertyReflection $propertyReflection): DataTypeInterface

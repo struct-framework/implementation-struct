@@ -18,6 +18,7 @@ use Struct\Exception\InvalidStructException;
 use Struct\Struct\Enum\HashAlgorithm;
 use Struct\Struct\Private\Enum\DataType;
 use UnitEnum;
+use DataType\Contracts\DataTypeInterface as NewDataTypeInterface;
 
 class StructHashUtility
 {
@@ -81,7 +82,7 @@ class StructHashUtility
         return $hash;
     }
 
-    protected static function buildHashFromDataType(DataTypeInterface $value, HashAlgorithm $algorithm): string
+    protected static function buildHashFromDataType(DataTypeInterface|NewDataTypeInterface $value, HashAlgorithm $algorithm): string
     {
         $data = hash($algorithm->value, $value::class, true);
         $data .= $value->serializeToString();
@@ -169,6 +170,9 @@ class StructHashUtility
             return DataType::Enum;
         }
         if ($value instanceof DataTypeInterface) {
+            return DataType::DataType;
+        }
+        if ($value instanceof NewDataTypeInterface) {
             return DataType::DataType;
         }
         if ($type === 'array') {

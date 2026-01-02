@@ -20,6 +20,7 @@ use Struct\Exception\InvalidStructException;
 use Struct\Struct\Enum\KeyConvert;
 use Struct\Struct\Private\Helper\TransformHelper;
 use UnitEnum;
+use DataType\Contracts\DataTypeInterface as NewDataTypeInterface;
 
 class SerializeUtility
 {
@@ -151,6 +152,9 @@ class SerializeUtility
             return $this->_serialize($value, $keyConvert);
         }
         if (is_a($value, DataTypeInterface::class)) {
+            return $value->serializeToString();
+        }
+        if (is_a($value, NewDataTypeInterface::class)) {
             return $value->serializeToString();
         }
         throw new InvalidStructException('The type of value is not supported', 1651521990);
