@@ -87,7 +87,10 @@ class PropertyReflectionHelper
 
         $propertyReflection->isAllowsNull = $type->allowsNull();
         $propertyReflection->isHasDefaultValue = $reflectionProperty->hasDefaultValue();
-        $propertyReflection->defaultValue = $reflectionProperty->getDefaultValue();
+        if($propertyReflection->isHasDefaultValue === true) {
+            $propertyReflection->defaultValue = $reflectionProperty->getDefaultValue();
+        }
+
 
         $propertyReflection->type = $type->getName();
         $propertyReflection->isBuiltin = $type->isBuiltin();

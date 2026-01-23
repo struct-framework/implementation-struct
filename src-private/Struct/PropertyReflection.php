@@ -14,7 +14,7 @@ class PropertyReflection
     public bool $isAllowsNull = false;
 
     public bool $isHasDefaultValue = false;
-    public mixed $defaultValue;
+    public mixed $defaultValue = null;
     public ?string $structTypeOfArrayOrCollection = null;
     public bool $isArrayKeyList = false;
 }
