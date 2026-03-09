@@ -89,7 +89,9 @@ class StructPropertyUtility
         $structureProperty->isBuiltin = $type->isBuiltin();
 
         $structureProperty->hasDefaultValue = $property->hasDefaultValue();
-        $structureProperty->defaultValue = $property->getDefaultValue();
+        if($structureProperty->hasDefaultValue === true) {
+            $structureProperty->defaultValue = $property->getDefaultValue();
+        }
         self::readDefaultValueFromAttributes($property, $structureProperty);
         return $structureProperty;
     }
